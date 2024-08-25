@@ -367,7 +367,7 @@ public class ConfLoader {
 
 	public void loadDBReaderConfigProperties(Path propsPath) throws SyncLiteException {
 		this.properties = loadPropertiesFromFile(propsPath);
-		validateAndLoadLicense();
+		setAdditionalProperties();
 		validateAndProcessProperties();    	
 	}
 	
@@ -377,24 +377,9 @@ public class ConfLoader {
 		validateAndProcessArgProperties();		
 	}
 
-	private void validateAndLoadLicense() throws SyncLiteException {
-		String propValue = properties.get("license-file");
-		if (propValue != null) {
-			this.licenseFilePath= Path.of(propValue);
-			if (this.licenseFilePath == null) {
-				throw new SyncLitePropsException("Invalid value specified for license-file in configuration file");
-			}
-			if (!Files.exists(this.licenseFilePath)) {
-				throw new SyncLitePropsException("Specified license-file does not exist : " + licenseFilePath);
-			}
-			if (!this.licenseFilePath.toFile().canRead()) {
-				throw new SyncLitePropsException("No read permission on specified license-file path");
-			}
-		} else {
-			//throw new SyncLitePropsException("license-file not specified in configuration file");
-		}
-		LicenseVerifier.validateLicense(licenseFilePath);
-		properties.putAll(LicenseVerifier.getLicenseProperties());
+	private void setAdditionalProperties() throws SyncLiteException {
+		properties.put("allowed-sources", "ALL");
+		properties.put("allowed-source-app-types", "ALL");
 	}
 
 
