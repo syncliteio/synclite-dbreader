@@ -208,9 +208,9 @@ public class LoadJob extends HttpServlet {
 	private final void initTracer(Path workDir) {
 		this.globalTracer = Logger.getLogger(ValidateDBTableOptions.class);    	
 		globalTracer.setLevel(Level.INFO);
-		if (this.globalTracer.getAppender("DBReaderTracer") == null) {
+		if (this.globalTracer.getAppender("SyncLiteDBReaderTracer") == null) {
 			RollingFileAppender fa = new RollingFileAppender();
-			fa.setName("DBReaderTracer");
+			fa.setName("SyncLiteDBReaderTracer");
 			fa.setFile(workDir.resolve("synclite_dbreader.trace").toString());
 			fa.setLayout(new PatternLayout("%d %-5p [%c{1}] %m%n"));
 			fa.setMaxBackupIndex(10);

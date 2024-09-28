@@ -118,7 +118,7 @@ public class DBReaderDriver implements Runnable{
 			break;
 		}
 		RollingFileAppender fa = new RollingFileAppender();
-		fa.setName("FileLogger");
+		fa.setName("SyncLiteDBReaderTracer");
 		fa.setFile(Path.of(ConfLoader.getInstance().getSyncLiteDeviceDir().toString(), "synclite_dbreader.trace").toString());
 		fa.setLayout(new PatternLayout("%d %-5p [%t] %m%n"));
 		fa.setMaxBackupIndex(10);
