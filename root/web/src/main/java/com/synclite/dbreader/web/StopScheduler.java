@@ -20,6 +20,8 @@ import java.io.BufferedReader;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.Files;
@@ -101,7 +103,7 @@ public class StopScheduler extends HttpServlet {
 		} catch (Exception e) {
 			String errorMsg = e.getMessage();
 			this.globalTracer.error("Failed to stop job scheduler : " + e.getMessage(), e);
-			request.getRequestDispatcher("jobError.jsp?jobType=StopReadJobScheduler&errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("jobError.jsp?jobType=StopReadJobScheduler&errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 		}
 	}
 

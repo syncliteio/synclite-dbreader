@@ -24,6 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -58,6 +60,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -121,7 +124,13 @@ public class ValidateDeviceDirectory extends HttpServlet {
 			if ((syncLiteDeviceDirStr== null) || syncLiteDeviceDirStr.trim().isEmpty()) {
 				throw new ServletException("\"SyncLite Device Directory Path\" must be specified");
 			} else {
-				syncLiteDeviceDir = Path.of(syncLiteDeviceDirStr);
+				syncLiteDeviceDir = Path.of(syncLiteDeviceDirStr).toAbsolutePath().normalize();
+				// Security: reject paths containing traversal sequences after normalization
+				if (!syncLiteDeviceDir.toString().equals(Path.of(syncLiteDeviceDirStr).toAbsolutePath().normalize().toString())) {
+					throw new ServletException("Invalid \"SyncLite Device Directory Path\": path traversal detected.");
+				}
+				// Update to the canonical (normalized) form for all subsequent use
+				syncLiteDeviceDirStr = syncLiteDeviceDir.toString();
 				if (! Files.exists(syncLiteDeviceDir)) {
 					try {
 						Files.createDirectories(syncLiteDeviceDir);
@@ -144,6 +153,13 @@ public class ValidateDeviceDirectory extends HttpServlet {
 
 			initTracer(syncLiteDeviceDir);
 
+			// Rotate session to prevent session fixation (Servlet 3.0 compatible)
+			HttpSession oldSession = request.getSession(false);
+			if (oldSession != null) {
+				oldSession.invalidate();
+			}
+			request.getSession(true);
+
 			request.getSession().setAttribute("job-name", jobName);
 			request.getSession().setAttribute("synclite-device-dir", syncLiteDeviceDirStr);
 
@@ -152,7 +168,7 @@ public class ValidateDeviceDirectory extends HttpServlet {
 			//System.out.println("exception : " + e);
 			this.globalTracer.error("Exception while processing request:", e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("selectDeviceDirectory.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("selectDeviceDirectory.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			throw new ServletException(e);
 		}
 	}

@@ -72,7 +72,7 @@ public class CSVFileReader extends DBReader {
 	@Override
 	protected long fullReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 			List<Path> storageDataFiles = new ArrayList<Path>();
 			HashMap<Path, Instant> creationTimes = new HashMap<Path, Instant>();
 			try {
@@ -88,7 +88,7 @@ public class CSVFileReader extends DBReader {
 			//Read dataFiles one by one. and publish records.
 			try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
 				try (PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 					for (Path storageDataFile : storageDataFiles) {
 						batchRecCount = 0;
 						batchCount = 1;
@@ -141,7 +141,7 @@ public class CSVFileReader extends DBReader {
 					}
 
 					//Just update the single entry with Long.MAX_VALUE.
-					deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + srcObject.getName() + "'");
+					deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 					srcObject.setLastReadIncrementalKeyColVal("", String.valueOf(Long.MAX_VALUE));
 
 					if (totalRecCount > 0) {
@@ -170,7 +170,7 @@ public class CSVFileReader extends DBReader {
 	@Override
 	protected long incrementalReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 			List<Path> storageDataFiles = new ArrayList<Path>();
 			HashMap<Path, Instant> creationTimes = new HashMap<Path, Instant>();
 			Path latestFile = null;
@@ -195,7 +195,7 @@ public class CSVFileReader extends DBReader {
 			//Read dataFiles one by one. and publish records.
 			try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
 				try (PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 					for (Path storageDataFile : storageDataFiles) {
 						fileRecCount = 0;
 						batchRecCount = 0;
@@ -248,7 +248,7 @@ public class CSVFileReader extends DBReader {
 
 						}
 
-						deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + dataFileCreationTime + "' WHERE object_name = '" + srcObject.getName() + "' AND column_name = '" + incrKey + "'");
+						deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + escapeSqlLiteral(dataFileCreationTime.toString()) + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "' AND column_name = '" + escapeSqlLiteral(incrKey) + "'");
 						srcObject.setLastReadIncrementalKeyColVal(incrKey, dataFileCreationTime.toString());
 						
 						tracer.info("Finished reading data from file : " + localDataFile + ", file record count : " + fileRecCount);

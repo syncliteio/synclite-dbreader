@@ -46,6 +46,7 @@ if (session.getAttribute("num-enabled-objects") != null) {
 			</tbody>
 		</table>
 		<form action="${pageContext.request.contextPath}/startJob?jobArgs=true"	method="post">	
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<center>
 				<button type="submit" name="next">Start</button>
 			</center>			

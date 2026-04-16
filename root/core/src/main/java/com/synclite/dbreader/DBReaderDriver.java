@@ -64,7 +64,7 @@ public class DBReaderDriver implements Runnable{
 		HashMap<Integer, DBObject> objects;
 
 		private Lock processingLock = new ReentrantLock();
-		private boolean aquireProcessingLock() {
+		private boolean acquireProcessingLock() {
 			return processingLock.tryLock();
 		}
 
@@ -133,7 +133,9 @@ public class DBReaderDriver implements Runnable{
 	}
 
 	public final void stopSyncServices() {
-		//try {
+		if (newObjectDetector != null) {
+			newObjectDetector.shutdownNow();
+		}
 
 		if (failedObjectScheduler != null) {
 			failedObjectScheduler.shutdownNow();
@@ -142,10 +144,19 @@ public class DBReaderDriver implements Runnable{
 		if (objectScheduler != null) {
 			objectScheduler.shutdownNow();
 		}
-		//} 
-		//catch (InterruptedException e) {
-		//	Thread.interrupted();
-		//}
+
+		if (readerTasks != null) {
+			for (ExecutorService reader : readerTasks) {
+				reader.shutdownNow();
+			}
+		}
+
+		// Close the JDBC connection pool
+		try {
+			JDBCConnector.getInstance().close();
+		} catch (Exception e) {
+			// Ignore errors during shutdown
+		}
 	}
 
 	private final void runReadServices() throws SyncLiteException {
@@ -176,7 +187,7 @@ public class DBReaderDriver implements Runnable{
 				syncer.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 			}
 		} catch (InterruptedException e) {
-			Thread.interrupted();
+			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -198,7 +209,8 @@ public class DBReaderDriver implements Runnable{
 				try {
 					future.get(); // This blocks until the task is completed
 				} catch (InterruptedException e) {
-					Thread.interrupted();
+					Thread.currentThread().interrupt();
+					break;
 				} catch (ExecutionException e) {
 					throw new SyncLiteException(e);
 				}
@@ -234,7 +246,8 @@ public class DBReaderDriver implements Runnable{
 				try {
 					future.get(); // This blocks until the task is completed
 				} catch (InterruptedException e) {
-					Thread.interrupted();
+					Thread.currentThread().interrupt();
+					break;
 				} catch (ExecutionException e) {
 					throw new SyncLiteException(e);
 				}
@@ -294,7 +307,7 @@ public class DBReaderDriver implements Runnable{
 			if (objectGrp == null) {
 				return;
 			}		
-			if (!objectGrp.aquireProcessingLock()) {
+			if (!objectGrp.acquireProcessingLock()) {
 				//If the device is already being processed, then add it to queue and move on
 				addObjectGroupTask(objectGrp);
 				return;
@@ -322,7 +335,7 @@ public class DBReaderDriver implements Runnable{
 				} 
 			}
 		} catch (InterruptedException e) {
-			Thread.interrupted();
+			Thread.currentThread().interrupt();
 		} finally {
 			if (objectGrp != null) {
 				objectGrp.releaseProcessingLock();
@@ -338,7 +351,7 @@ public class DBReaderDriver implements Runnable{
 				if (objectGrp == null) {
 					return;
 				}		
-				if (!objectGrp.aquireProcessingLock()) {
+				if (!objectGrp.acquireProcessingLock()) {
 					//If the device is already being processed, then add it to queue and move on
 					addObjectGroupTask(objectGrp);
 					continue;
@@ -355,7 +368,7 @@ public class DBReaderDriver implements Runnable{
 					} 
 				}
 			} catch (InterruptedException e) {
-				Thread.interrupted();
+				Thread.currentThread().interrupt();
 			} finally {
 				if (objectGrp != null) {
 					objectGrp.releaseProcessingLock();
@@ -372,7 +385,7 @@ public class DBReaderDriver implements Runnable{
 				if (objectGrp == null) {
 					return;
 				}		
-				if (!objectGrp.aquireProcessingLock()) {
+				if (!objectGrp.acquireProcessingLock()) {
 					//If the device is already being processed, then add it to queue and move on
 					addObjectGroupTask(objectGrp);
 					continue;
@@ -389,7 +402,7 @@ public class DBReaderDriver implements Runnable{
 					} 
 				}
 			} catch (InterruptedException e) {
-				Thread.interrupted();
+				Thread.currentThread().interrupt();
 			} finally {
 				if (objectGrp != null) {
 					objectGrp.releaseProcessingLock();
@@ -406,7 +419,7 @@ public class DBReaderDriver implements Runnable{
 
 	private final void initDriver() throws SyncLiteException {
 		initLogger();
-		initDBMetadataRedader();
+		initDBMetadataReader();
 		createMonitor();
 		initSourceDB();
 		loadObjects();
@@ -414,7 +427,7 @@ public class DBReaderDriver implements Runnable{
 		initSyncLiteDevices();
 	}
 	
-	private final void initDBMetadataRedader() {
+	private final void initDBMetadataReader() {
 		DBMetadataReader.setLogger(this.globalTracer);
 	}
 	
@@ -534,14 +547,14 @@ public class DBReaderDriver implements Runnable{
 	
 	private final void addSrcObjectInfoToMetadataTable(ObjectInfo oInfo, String objectType) throws SyncLiteException {
 		String url = "jdbc:sqlite:" + this.dbReaderMetadataFile;
-		String metadataTableDeleteSql = "DELETE FROM src_object_info WHERE object_name = '" + oInfo.name + "'";
+		String metadataTableDeleteSql = "DELETE FROM src_object_info WHERE object_name = ?";
 		String metadataTableInsertSql = "INSERT INTO src_object_info(object_name, object_type, allowed_columns, unique_key_columns, incremental_key_columns, group_name, group_position, mask_columns, delete_condition, select_conditions, enable) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 		while(!Thread.interrupted()) {
 			try (Connection conn = DriverManager.getConnection(url)){
 				conn.setAutoCommit(false);		
 				try (PreparedStatement pstmt = conn.prepareStatement(metadataTableInsertSql);
-						Statement stmt = conn.createStatement()) {
+						PreparedStatement deleteStmt = conn.prepareStatement(metadataTableDeleteSql)) {
 					pstmt.setString(1, oInfo.name);
 					pstmt.setString(2, objectType);
 					pstmt.setString(3, oInfo.columnDefStr);
@@ -554,7 +567,8 @@ public class DBReaderDriver implements Runnable{
 					pstmt.setString(10, "");
 					pstmt.setInt(11, 1);
 					pstmt.addBatch();				
-					stmt.execute(metadataTableDeleteSql);
+					deleteStmt.setString(1, oInfo.name);
+					deleteStmt.execute();
 					pstmt.executeBatch();
 				}
 				conn.commit();
@@ -683,7 +697,7 @@ public class DBReaderDriver implements Runnable{
 				addObjectGroupTask(grp);
 			}
 		} catch(InterruptedException e) {
-			Thread.interrupted();
+			Thread.currentThread().interrupt();
 		}
 	}
 	
@@ -737,12 +751,12 @@ public class DBReaderDriver implements Runnable{
 				addObjectGroupTask(grp);
 			}
 		} catch(InterruptedException e) {
-			Thread.interrupted();
+			Thread.currentThread().interrupt();
 		}
 	}
 
 	public final void removeObject(DBObject o) {
-		dbObjects.remove(o);
+		dbObjects.remove(o.getName());
 		//Remove entry from TableGroup as well
 		DBObjectGroup grp = objectGroups.get(o.getDeviceName());
 		if (grp != null) {
@@ -767,15 +781,15 @@ public class DBReaderDriver implements Runnable{
 	private void createSystemDeviceSendShutdown() throws SyncLiteException {
 		try {
 			Path deviceFilePath = ConfLoader.getInstance().getSyncLiteDeviceDir().resolve("synclite_dbreader_system.db");
-			Class.forName("io.synclite.logger.Telemetry");
-			Telemetry.initialize(deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), "system");
-			String deviceURL = "jdbc:synclite_telemetry:" + deviceFilePath;
+			Class.forName("io.synclite.logger.DBLogger");
+			DBLogger.initialize(deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), "system");
+			String deviceURL = "jdbc:synclite_dblogger:" + deviceFilePath;
 			try (Connection conn = DriverManager.getConnection(deviceURL)) {
-				try (TelemetryStatement stmt = (TelemetryStatement) conn.createStatement()) {
+				try (DBLoggerStatement stmt = (DBLoggerStatement) conn.createStatement()) {
 					stmt.log("SHUTDOWN");
 				}
 			}
-			Telemetry.closeAllDevices();
+			DBLogger.closeAllDevices();
 		} catch (Exception e) {
 			throw new SyncLiteException("Failed to create a system device and send SHUTDOWN message : " + e.getMessage(), e);
 		}

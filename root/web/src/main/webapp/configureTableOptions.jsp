@@ -23,6 +23,12 @@
 <%@page import="java.util.HashMap"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <%@ page import="java.sql.*"%>
 <%@ page import="org.sqlite.*"%>
 <!DOCTYPE html>
@@ -149,11 +155,12 @@ if (request.getParameter("dbreader-skip-object-configurations") == null) {
 		<h2>Configure Source DB Tables/Views</h2>
 		<%
 		if (errorMsg != null) {
-			out.println("<h4 style=\"color: red;\">" + errorMsg + "</h4>");
+			out.println("<h4 style=\"color: red;\">" + escHtml(errorMsg) + "</h4>");
 		}
 		%>
 
 		<form action="${pageContext.request.contextPath}/validateDBTableOptions" method="post">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 				<tbody>
 

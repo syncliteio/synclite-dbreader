@@ -19,6 +19,8 @@ package com.synclite.dbreader.web;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -89,9 +91,9 @@ public class StopJob extends HttpServlet {
 		
 				if(currentJobPID > 0) {
 					if (isWindows()) {
-						Runtime.getRuntime().exec("taskkill /F /PID " + currentJobPID);
+						Runtime.getRuntime().exec(new String[]{"taskkill", "/F", "/PID", String.valueOf(currentJobPID)});
 					} else {
-						Runtime.getRuntime().exec("kill -9 " + currentJobPID);
+						Runtime.getRuntime().exec(new String[]{"kill", "-9", String.valueOf(currentJobPID)});
 					}
 				}
 				request.getSession().setAttribute("job-status","STOPPED");
@@ -100,8 +102,7 @@ public class StopJob extends HttpServlet {
 			}
 		} catch(Exception e) {
 			String errorMsg = e.getMessage();
-			//request.getRequestDispatcher("jobError.jsp?jobType=Stop&errorMsg=" + errorMsg).forward(request, response);
-			response.sendRedirect("jobError.jsp?jobType=StartRead&errorMsg=" + errorMsg);
+			response.sendRedirect("jobError.jsp?jobType=StartRead&errorMsg=" + URLEncoder.encode(errorMsg != null ? errorMsg : "Unknown error", StandardCharsets.UTF_8.name()));
 		}
 	}
 

@@ -17,6 +17,12 @@
 <%@page import="java.nio.charset.Charset"%>
 <%@page import="java.util.Stack"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -94,11 +100,12 @@
 		%>
 		
 		<form name="traceForm" method="post" action="jobTrace.jsp">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 			<tr>
 			<td>							
 				<div class="pagination">
-					Trace file : <%=jobTraceFilePath.toString()%> (last 100 lines) <span style="float:right;"> REFRESH IN 
+					Trace file : <%=escHtml(jobTraceFilePath.toString())%> (last 100 lines) <span style="float:right;"> REFRESH IN 
 					<input type="text" id="refresh-interval" name="refresh-interval" value ="<%=refreshInterval%>" size="1" onchange="autoRefreshSetTimeout()">
 					SECONDS </span>
 				</div>
@@ -106,7 +113,7 @@
 			</tr>
 			<tr>
 			<td>
-			<textarea name="tracearea" id ="tracearea" readonly style="width: 100%; height: 80vh;"><%=traces.toString()%></textarea>
+			<textarea name="tracearea" id ="tracearea" readonly style="width: 100%; height: 80vh;"><%=escHtml(traces.toString())%></textarea>
 			</td>
 			</tr>
 		</form>	

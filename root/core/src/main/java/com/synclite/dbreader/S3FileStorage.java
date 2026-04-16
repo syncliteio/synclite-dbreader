@@ -119,6 +119,8 @@ public class S3FileStorage extends FileStorage {
 					}
 					outputStream.flush();
 				}
+			} finally {
+				s3Object.close();
 			}
 			return outputFilePath;
 		} catch(Exception e) {

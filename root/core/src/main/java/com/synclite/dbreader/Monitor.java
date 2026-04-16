@@ -431,11 +431,12 @@ public class Monitor {
 		Path statsFilePath = Path.of(ConfLoader.getInstance().getSyncLiteDeviceDir().toString(), "synclite_dbreader_statistics.db");
 		String url = "jdbc:sqlite:" + statsFilePath;
 		try (Connection conn = DriverManager.getConnection(url)) {
-			try (Statement stmt = conn.createStatement()) {
-				stmt.execute("DELETE FROM object_statistics where object = '" + t.getName() + "'");
+			try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM object_statistics WHERE object = ?")) {
+				pstmt.setString(1, t.getName());
+				pstmt.execute();
 			}
 		} catch (SQLException e) {
-			throw new SyncLiteException("Failed to delete object : " + t + " from dbreader statistics file");		 
+			throw new SyncLiteException("Failed to delete object : " + t.getName() + " from dbreader statistics file");		 
 		}
 	}
 

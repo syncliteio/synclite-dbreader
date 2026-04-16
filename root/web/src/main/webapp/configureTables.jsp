@@ -24,6 +24,12 @@
 <%@page import="java.util.HashMap"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <%@ page import="java.sql.*"%>
 <%@ page import="org.sqlite.*"%>
 <!DOCTYPE html>
@@ -86,11 +92,12 @@ selectConditionsPlaceHolderText = selectConditionsPlaceHolderText.replace("&", "
 		<h2>Configure DB Tables/Views</h2>
 		<%
 		if (errorMsg != null) {
-			out.println("<h4 style=\"color: red;\">" + errorMsg + "</h4>");
+			out.println("<h4 style=\"color: red;\">" + escHtml(errorMsg) + "</h4>");
 		}
 		%>
 
 		<form action="${pageContext.request.contextPath}/validateDBTables"	method="post">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 				<tbody>
 				<tr></tr>
@@ -169,13 +176,13 @@ selectConditionsPlaceHolderText = selectConditionsPlaceHolderText.replace("&", "
 									if (configureIncrementalKeys.equals("true")) {
 										if (request.getParameter("incremental-key-columns-" + idx) != null) {
 											String val = request.getParameter("incremental-key-columns-" + idx);
-											out.println("<td><input type=\"text\" size=\"20\" id=\"incremental-key-columns-" + idx + "\" name=\"incremental-key-columns-" + idx + "\" value=\"" + val + "\" title=\"Specify a comma separated ist of incremental key columns such as timestamp or numeric columns which are assigned monotonically increasing value on each UPDATE and INSERT operation executed on this object. SyncLite strongly recommends to create indexes on these columns for improved replication performance.\"/></td>");
+											out.println("<td><input type=\"text\" size=\"20\" id=\"incremental-key-columns-" + idx + "\" name=\"incremental-key-columns-" + idx + "\" value=\"" + val + "\" title=\"Specify a comma separated list of incremental key columns such as timestamp or numeric columns which are assigned monotonically increasing value on each UPDATE and INSERT operation executed on this object. SyncLite strongly recommends to create indexes on these columns for improved replication performance.\"/></td>");
 										} else {
 											String incrementalKeyCols = "";
 											if (rs.getString("incremental_key_columns") != null) {
 												incrementalKeyCols = rs.getString("incremental_key_columns");
 											}						
-											out.println("<td><input type=\"text\" size=\"20\" id=\"incremental-key-columns-" + idx + "\" name=\"incremental-key-columns-" + idx + "\" value=\"" + incrementalKeyCols + "\" title=\"Specify a comma separated ist of incremental key columns such as timestamp or numeric columns which are assigned monotonically increasing value on each UPDATE and INSERT operation executed on this object. SyncLite strongly recommends to create indexes on these columns for improved replication performance.\"/></td>");
+											out.println("<td><input type=\"text\" size=\"20\" id=\"incremental-key-columns-" + idx + "\" name=\"incremental-key-columns-" + idx + "\" value=\"" + incrementalKeyCols + "\" title=\"Specify a comma separated list of incremental key columns such as timestamp or numeric columns which are assigned monotonically increasing value on each UPDATE and INSERT operation executed on this object. SyncLite strongly recommends to create indexes on these columns for improved replication performance.\"/></td>");
 										}
 									}
 
@@ -206,13 +213,13 @@ selectConditionsPlaceHolderText = selectConditionsPlaceHolderText.replace("&", "
 									if (configureSoftDeleteConditions.equals("true")) {
 										if (request.getParameter("delete-condition-" + idx) != null) {
 											String val = request.getParameter("delete-condition-" + idx);
-											out.println("<td><input type=\"text\" size=\"20\" id=\"delete-condition-" + idx + "\" name=\"delete-condition-" + idx + "\" value=\"" + val + "\" title=\"Specify deletion propagation condition as an equality SQL predicate. E.g. if you have a column is_deleted CHAT(1) and you are implementing soft deletion mechanism by just marking these records as 'Y' is_deleted then specify is_deleted = 'Y'. This criteria will be used to delete the records periodically on destination database.\"/></td>");
+											out.println("<td><input type=\"text\" size=\"20\" id=\"delete-condition-" + idx + "\" name=\"delete-condition-" + idx + "\" value=\"" + val + "\" title=\"Specify deletion propagation condition as an equality SQL predicate. E.g. if you have a column is_deleted CHAR(1) and you are implementing soft deletion mechanism by just marking these records as 'Y' is_deleted then specify is_deleted = 'Y'. This criteria will be used to delete the records periodically on destination database.\"/></td>");
 										} else {
 											String deleteCondition = "";
 											if (rs.getString("delete_condition") != null) {
 												deleteCondition = rs.getString("delete_condition");
 											}
-											out.println("<td><input type=\"text\" size=\"20\" id=\"delete-condition-" + idx + "\" name=\"delete-condition-" + idx + "\" value=\"" + deleteCondition + "\" title=\"Specify deletion propagation condition as an equality SQL predicate. E.g. if you have a column is_deleted CHAT(1) and you are implementing soft deletion mechanism by just marking these records as 'Y' is_deleted then specify is_deleted = 'Y'. This condition will be used to delete records periodically on destination database.\"/></td>");
+											out.println("<td><input type=\"text\" size=\"20\" id=\"delete-condition-" + idx + "\" name=\"delete-condition-" + idx + "\" value=\"" + deleteCondition + "\" title=\"Specify deletion propagation condition as an equality SQL predicate. E.g. if you have a column is_deleted CHAR(1) and you are implementing soft deletion mechanism by just marking these records as 'Y' is_deleted then specify is_deleted = 'Y'. This condition will be used to delete records periodically on destination database.\"/></td>");
 										}								
 									}
 									

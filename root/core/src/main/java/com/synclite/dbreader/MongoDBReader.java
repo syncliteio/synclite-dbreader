@@ -75,7 +75,7 @@ public class MongoDBReader extends DBReader {
 	}
 	
 	protected long fullReadKeysInternal() throws SyncLiteException {
-		String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+		String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 		tracer.info("Source object query : " + srcObject.getSelectKeyTableSql());
 		long batchRecCount = 0;
 		long totalRecCount = 0;
@@ -83,7 +83,7 @@ public class MongoDBReader extends DBReader {
 		long batchSize = ConfLoader.getInstance().getSrcDBReaderBatchSize();
 		try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL))	{
 			//deviceConn.setAutoCommit(false);
-			try(TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+			try(DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 				deviceStmt.execute(srcObject.getDropKeyTableSql());
 				deviceStmt.execute(srcObject.getCreateKeyTableSql());
 				try (PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertKeyTableSql())) {
@@ -271,7 +271,7 @@ public class MongoDBReader extends DBReader {
 	@Override
 	protected long fullReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 
 			long batchRecCount = 0;
 			long totalRecCount = 0;
@@ -280,13 +280,13 @@ public class MongoDBReader extends DBReader {
 			//Read dataFiles one by one. and publish records.
 			try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
 				try (PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 
 					LogPosition initialLogPosition = null;
 					if (ConfLoader.getInstance().getSrcDBReaderMethod() == DBReaderMethod.LOG_BASED) {
 						initialLogPosition = getInitialLogPosition();
 						//Update initial log position into checkpoint table					
-						deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + initialLogPosition.position + "', log_ts = " + initialLogPosition.ts  + " WHERE object_name = '" + srcObject.getName() + "'");
+						deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + escapeSqlLiteral(initialLogPosition.position) + "', log_ts = " + initialLogPosition.ts  + " WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 						srcObject.setLastReadLogPosition(initialLogPosition.position);
 						srcObject.setLastReadLogTS(initialLogPosition.ts);
 					}
@@ -330,7 +330,7 @@ public class MongoDBReader extends DBReader {
 					}
 
 					//Just update the single entry with Long.MAX_VALUE.
-					deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + srcObject.getName() + "'");
+					deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 					srcObject.setLastReadIncrementalKeyColVal("", String.valueOf(Long.MAX_VALUE));
 					if (totalRecCount > 0) {
 
@@ -359,7 +359,7 @@ public class MongoDBReader extends DBReader {
 	@Override
 	protected long logReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 			HashMap<String,String> maxIncrementalKeyColumnVals = new HashMap<String, String>();
 
 			long batchRecCount = 0;
@@ -371,7 +371,7 @@ public class MongoDBReader extends DBReader {
 				try (PreparedStatement deviceInsertPreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
 						PreparedStatement deviceUpdatePreparedStmt = deviceConn.prepareStatement(srcObject.getUpdateTableSql());
 						PreparedStatement deviceDeletePreparedStmt = deviceConn.prepareStatement(srcObject.getDeleteTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 
 					/*
 					MongoDatabase localDatabase = mongoClient.getDatabase("local");
@@ -514,7 +514,7 @@ public class MongoDBReader extends DBReader {
 									if (resumeTokenDoc != null) {
 										latestLogPosition = resumeTokenDoc.toString();
 									}
-									deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + latestLogPosition.toString() + "', log_ts = " + latestLogTS +" WHERE object_name = '" + srcObject.getName() + "'");
+									deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + escapeSqlLiteral(latestLogPosition.toString()) + "', log_ts = " + latestLogTS +" WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 									srcObject.setLastReadLogPosition(latestLogPosition.toString());
 									srcObject.setLastReadLogTS(latestLogTS);
 
@@ -552,7 +552,7 @@ public class MongoDBReader extends DBReader {
 						if (resumeTokenDoc != null) {
 							latestLogPosition = resumeTokenDoc.toString();
 						}
-						deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + latestLogPosition.toString() + "', log_ts = " + latestLogTS +" WHERE object_name = '" + srcObject.getName() + "'");
+						deviceStmt.executeUnlogged("UPDATE synclite_logreader_checkpoint SET log_position = '" + escapeSqlLiteral(latestLogPosition.toString()) + "', log_ts = " + latestLogTS +" WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 						srcObject.setLastReadLogPosition(latestLogPosition.toString());
 						srcObject.setLastReadLogTS(latestLogTS);
 
@@ -585,7 +585,7 @@ public class MongoDBReader extends DBReader {
 	@Override
 	protected long incrementalReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 			HashMap<String,String> maxIncrementalKeyColumnVals = new HashMap<String, String>();
 			HashMap<String,IncrementalKeyType> incrementalKeyTypes = new HashMap<String, IncrementalKeyType>();
 			incrementalKeyTypes.putAll(srcObject.getIncrementalKeyTypes());
@@ -808,7 +808,7 @@ public class MongoDBReader extends DBReader {
 			tracer.info("Source collection " + srcObject.getName() + " query filter : " + predicate.toJson());
 			try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
 				try (PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 
 					// Find all documents in the collection
 					FindIterable<Document> documents = collection.find(predicate);
@@ -890,7 +890,7 @@ public class MongoDBReader extends DBReader {
 						//Update all entries.
 						//
 						for (Map.Entry<String, String> entry : maxIncrementalKeyColumnVals.entrySet()) {						
-							deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + entry.getValue() + "' WHERE object_name = '" + srcObject.getName() + "' AND column_name = '" + entry.getKey() + "'");
+							deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + escapeSqlLiteral(entry.getValue()) + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "' AND column_name = '" + escapeSqlLiteral(entry.getKey()) + "'");
 							srcObject.setLastReadIncrementalKeyColVal(entry.getKey(), entry.getValue());
 						}
 
