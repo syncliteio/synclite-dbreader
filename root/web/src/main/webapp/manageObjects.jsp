@@ -23,6 +23,12 @@
 <%@page import="java.util.HashMap"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <%@ page import="java.sql.*"%>
 <%@ page import="org.sqlite.*"%>
 <!DOCTYPE html>
@@ -107,12 +113,13 @@
 		}
 		
 		if (errorMsg != null) {
-			out.println("<h4 style=\"color: red;\">" + errorMsg + "</h4>");
+			out.println("<h4 style=\"color: red;\">" + escHtml(errorMsg) + "</h4>");
 		}
 
 		%>
 
 		<form action="${pageContext.request.contextPath}/manageObjects" method="post">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 				<tbody>
 				<tr></tr>
@@ -121,7 +128,7 @@
 					<th>Enable <input type="checkbox" id="enable-all" name="enable-all"></th>
 					<th>Reload Schema On Next Restart <input type="checkbox" id="rsnr-all" name="rsnr-all"></th>
 					<th>Reload Schema On Each Restart <input type="checkbox" id="rser-all" name="rser-all"></th>
-					<th>Reload Object On Next Restart <input type="checkbox" id="ronr-all" name="rsor-all"></th>
+					<th>Reload Object On Next Restart <input type="checkbox" id="ronr-all" name="ronr-all"></th>
 					<th>Reload Object On Each Restart <input type="checkbox" id="roer-all" name="roer-all"></th>
 				</tr>
 				<%

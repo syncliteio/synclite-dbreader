@@ -310,24 +310,24 @@ public class DBObject {
 	public final void configureSyncLiteDevice() throws SyncLiteException {
 		try {
 			this.deviceFilePath = ConfLoader.getInstance().getSyncLiteDeviceDir().resolve(this.deviceName + ".db");
-			Class.forName("io.synclite.logger.Telemetry");
-			Telemetry.initialize(this.deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), this.deviceName);
-			String deviceURL = "jdbc:synclite_telemetry:" + this.deviceFilePath;
+			Class.forName("io.synclite.logger.DBLogger");
+			DBLogger.initialize(this.deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), this.deviceName);
+			String deviceURL = "jdbc:synclite_dblogger:" + this.deviceFilePath;
 			try (Connection conn = DriverManager.getConnection(deviceURL)) {
 				conn.setAutoCommit(false);
-				try (TelemetryStatement stmt = (TelemetryStatement) conn.createStatement()) {
+				try (DBLoggerStatement stmt = (DBLoggerStatement) conn.createStatement()) {
 					stmt.executeUnlogged("CREATE TABLE IF NOT EXISTS synclite_dbreader_checkpoint(object_name TEXT, column_name TEXT, column_type TEXT, column_value TEXT)");
 					if (this.doReloadObject()) {
 						this.tracer.info("Reload object requested for : " + this.fullName + ", resetting checkpoint table");
 						//If user has asked to reload objects then drop synclite_dbreader_checkpoint so that full object reload will be done
-						stmt.executeUnlogged("DELETE FROM synclite_dbreader_checkpoint WHERE object_name = '" + this.name + "'");
+						stmt.executeUnlogged("DELETE FROM synclite_dbreader_checkpoint WHERE object_name = '" + escapeSqlLiteral(this.name) + "'");
 						//
 						//Dont publish DROP TABLE SQL as that should be controlled by the dst-object-init-mode option in Consolidation.
 						//stmt.execute(dropTableSql);
 					}
 					int incrKeyCount = 0;
 					boolean incrKeyChanged = false;
-					try(ResultSet rs = stmt.executeQuery("SELECT count(*) FROM synclite_dbreader_checkpoint WHERE object_name = '" + this.name + "'")) {
+					try(ResultSet rs = stmt.executeQuery("SELECT count(*) FROM synclite_dbreader_checkpoint WHERE object_name = '" + escapeSqlLiteral(this.name) + "'")) {
 						incrKeyCount = rs.getInt(1);
 						if (this.incrementalKeyColumns.size() != incrKeyCount) {
 							incrKeyChanged= true;
@@ -337,7 +337,7 @@ public class DBObject {
 					if (incrKeyCount > 0) {
 						if (incrKeyChanged == false) {
 							//Check if all keys are as configured or configured incremental keys have changed.
-							try(ResultSet rs = stmt.executeQuery("SELECT column_name, column_type, column_value FROM synclite_dbreader_checkpoint WHERE object_name = '" + this.name + "'")) {
+							try(ResultSet rs = stmt.executeQuery("SELECT column_name, column_type, column_value FROM synclite_dbreader_checkpoint WHERE object_name = '" + escapeSqlLiteral(this.name) + "'")) {
 								while (rs.next()) {
 									String checkpointedIncrementalKeyCol = rs.getString("column_name");
 									String checkpointedIncrementalKeyColVal = rs.getString("column_value");
@@ -353,12 +353,12 @@ public class DBObject {
 						if (incrKeyChanged) {
 							this.tracer.info("Incremental key configuration changed for object : " + this.fullName + ", resetting checkpoint table");							
 							//Delete and reinsert fresh incremental key column with initial values.
-							stmt.executeUnlogged("DELETE FROM synclite_dbreader_checkpoint WHERE object_name = '" + this.name + "'");
+							stmt.executeUnlogged("DELETE FROM synclite_dbreader_checkpoint WHERE object_name = '" + escapeSqlLiteral(this.name) + "'");
 							for (String incrKey : this.incrementalKeyColumns) {
 								String colName = incrKey;
 								String colType = getColumnDataType(incrKey);
 								String colVal = getInitialIncrKeyColVal(incrKey);								
-								stmt.executeUnlogged("INSERT INTO synclite_dbreader_checkpoint(object_name, column_name, column_type, column_value) VALUES('" + this.name + "', '" + colName + "', '" + colType + "', '" + colVal + "')");							
+								stmt.executeUnlogged("INSERT INTO synclite_dbreader_checkpoint(object_name, column_name, column_type, column_value) VALUES('" + escapeSqlLiteral(this.name) + "', '" + escapeSqlLiteral(colName) + "', '" + escapeSqlLiteral(colType) + "', '" + escapeSqlLiteral(colVal) + "')");							
 								this.lastReadIncrementalKeyColVals.put(colName, colVal);
 							}
 						}
@@ -371,19 +371,19 @@ public class DBObject {
 							String colName = incrKey;
 							String colType = getColumnDataType(incrKey);
 							String colVal = getInitialIncrKeyColVal(incrKey);
-							stmt.executeUnlogged("INSERT INTO synclite_dbreader_checkpoint(object_name, column_name, column_type, column_value) VALUES('" + this.name + "', '" + colName + "', '" + colType + "', '" + colVal + "')");							
+							stmt.executeUnlogged("INSERT INTO synclite_dbreader_checkpoint(object_name, column_name, column_type, column_value) VALUES('" + escapeSqlLiteral(this.name) + "', '" + escapeSqlLiteral(colName) + "', '" + escapeSqlLiteral(colType) + "', '" + escapeSqlLiteral(colVal) + "')");							
 							this.lastReadIncrementalKeyColVals.put(colName, colVal);							 
 						}	
 						stmt.execute(createTableSql);
 					}
 					if (ConfLoader.getInstance().getSrcDBReaderMethod() == DBReaderMethod.LOG_BASED) {
 						stmt.executeUnlogged("CREATE TABLE IF NOT EXISTS synclite_logreader_checkpoint(object_name TEXT, log_position TEXT, log_ts LONG)");
-						try(ResultSet rs = stmt.executeQuery("SELECT log_position, log_ts FROM synclite_logreader_checkpoint WHERE object_name = '" + this.name + "'")) {
+						try(ResultSet rs = stmt.executeQuery("SELECT log_position, log_ts FROM synclite_logreader_checkpoint WHERE object_name = '" + escapeSqlLiteral(this.name) + "'")) {
 							if (rs.next()) {
 								this.lastReadLogPosition = rs.getString("log_position");
 								this.lastReadLogTS = rs.getLong("log_ts");
 							} else {
-								stmt.executeUnlogged("INSERT INTO synclite_logreader_checkpoint(object_name, log_position, log_ts) VALUES('" + this.name + "', '', '" + System.currentTimeMillis()  + "')");							
+								stmt.executeUnlogged("INSERT INTO synclite_logreader_checkpoint(object_name, log_position, log_ts) VALUES('" + escapeSqlLiteral(this.name) + "', '', '" + System.currentTimeMillis()  + "')");							
 							}
 						}
 					}
@@ -1208,7 +1208,14 @@ public class DBObject {
 	private final static String quote(String t) {
 		return "\"" + t + "\"";
 	}
-	
+
+	private static String escapeSqlLiteral(String value) {
+		if (value == null) {
+			return null;
+		}
+		return value.replace("'", "''");
+	}
+
 	public static String quoteColumnName(String colName) {
 		if (ConfLoader.getInstance().getSrcQuoteColumnNames()) {
 			return quote(colName);

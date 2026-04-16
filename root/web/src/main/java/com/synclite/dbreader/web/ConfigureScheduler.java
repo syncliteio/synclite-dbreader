@@ -20,6 +20,8 @@ import java.io.BufferedReader;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.Files;
@@ -284,7 +286,7 @@ public class ConfigureScheduler extends HttpServlet {
 		} catch (Exception e) {
 			String errorMsg = e.getMessage();
 			this.globalTracer.error("Failed to configure and schedule job : " + e.getMessage(), e);
-			request.getRequestDispatcher("configureScheduler.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("configureScheduler.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 		}
 	}
 

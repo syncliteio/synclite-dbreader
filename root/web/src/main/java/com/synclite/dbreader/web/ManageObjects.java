@@ -24,6 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -142,7 +144,7 @@ public class ManageObjects extends HttpServlet {
 			}
 			if(currentJobPID != 0) {
 				String errorMessage = "A job is running with Process ID : " + currentJobPID + ". Please stop the job and then use Manage Objects";
-				request.getRequestDispatcher("manageObjects.jsp?errorMsg=" + errorMessage).forward(request, response);
+				request.getRequestDispatcher("manageObjects.jsp?errorMsg=" + URLEncoder.encode(errorMessage, StandardCharsets.UTF_8.name())).forward(request, response);
 			} else {
 
 				Path dbReaderMetadataFilePath = Path.of(syncLiteDeviceDir.toString(), "synclite_dbreader_metadata.db");
@@ -219,7 +221,7 @@ public class ManageObjects extends HttpServlet {
 		} catch (Exception e) {
 			//System.out.println("exception : " + e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("manageObjects.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("manageObjects.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			throw new ServletException(e);
 		}
 	}

@@ -142,6 +142,7 @@ function autoRefresh() {
                 	out.println("<td></td>");
                 	out.println("<td>");
                 	out.println("<form name=\"dashboardForm\" method=\"post\" action=\"dashboard.jsp\">");
+                	out.println("<input type=\"hidden\" name=\"csrfToken\" value=\"" + session.getAttribute("csrfToken") + "\"/>");
                 	out.println("<div class=\"pagination\">");
                 	out.println("REFRESH IN ");
                 	out.println("<input type=\"text\" id=\"refresh-interval\" name=\"refresh-interval\" value =\"" + refreshInterval + "\" size=\"1\" onchange=\"autoRefreshSetTimeout()\">");

@@ -24,6 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -103,6 +105,13 @@ public class LoadJob extends HttpServlet {
 
 			initTracer(syncLiteDeviceDirPath);
 
+			// Rotate session to prevent session fixation (Servlet 3.0 compatible)
+			HttpSession oldSession = request.getSession(false);
+			if (oldSession != null) {
+				oldSession.invalidate();
+			}
+			request.getSession(true);
+
 			Path configPath = syncLiteDeviceDirPath.resolve("synclite_dbreader.conf");
 			if (!Files.exists(configPath)) {
 				throw new ServletException("Synclite DBReader Configuration file does not exist in specified \"SyncLite Device Directory\". Please configure the job and start if it is was not previous configured and run.");
@@ -120,7 +129,7 @@ public class LoadJob extends HttpServlet {
 			System.out.println("exception : " + e);
 			String errorMsg = e.getMessage();
 			this.globalTracer.error("Failed to load DBReader job : " + errorMsg, e);
-			request.getRequestDispatcher("loadJob.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("loadJob.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 		}
 	}
 

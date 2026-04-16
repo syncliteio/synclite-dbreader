@@ -22,6 +22,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -266,6 +268,12 @@ public class ValidateDBReader extends HttpServlet {
 			if (request.getParameter("jvm-arguments") != null) {
 				if (!request.getParameter("jvm-arguments").isBlank()) {
 					jvmArguments = request.getParameter("jvm-arguments");
+					// Security: validate JVM args to prevent shell injection when written to
+					// synclite-dbreader-variables.bat / .sh and executed by the launcher scripts.
+					// Only allow standard JVM flags: -Xmx, -Xms, -Xss, -XX:..., -D<key>=<value>
+					if (!jvmArguments.matches("^(-X[a-zA-Z0-9:+./_=-]+|--XX:[a-zA-Z0-9:+./_=-]+|-D[a-zA-Z0-9._/=-]+)(\\s+(-X[a-zA-Z0-9:+./_=-]+|-XX:[a-zA-Z0-9:+./_=-]+|-D[a-zA-Z0-9._/=-]+))*$")) {
+						throw new ServletException("Invalid JVM arguments. Only standard JVM flags are allowed (e.g. -Xmx512m -XX:+UseG1GC -Dkey=value).");
+					}
 				}
 			}
 
@@ -871,7 +879,7 @@ public class ValidateDBReader extends HttpServlet {
 			//System.out.println("exception : " + e);
 			this.globalTracer.error("Exception while processing request:", e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("configureDBReader.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("configureDBReader.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			throw new ServletException(e);
 		}
 	}
@@ -1858,13 +1866,13 @@ public class ValidateDBReader extends HttpServlet {
 						pInsertOrIgnoreStmt.setString(2, ti.objectType);
 						pInsertOrIgnoreStmt.setString(3, ti.columnList);
 						pInsertOrIgnoreStmt.setString(4, ti.pkColList);
-						pInsertOrUpdateStmt.setString(5, "");
-						pInsertOrUpdateStmt.setString(6, "");
-						pInsertOrUpdateStmt.setInt(7, 1);
-						pInsertOrUpdateStmt.setString(8, "");
-						pInsertOrUpdateStmt.setString(9, "");
-						pInsertOrUpdateStmt.setString(10, "");
-						pInsertOrUpdateStmt.setInt(11, 0);
+						pInsertOrIgnoreStmt.setString(5, "");
+						pInsertOrIgnoreStmt.setString(6, "");
+						pInsertOrIgnoreStmt.setInt(7, 1);
+						pInsertOrIgnoreStmt.setString(8, "");
+						pInsertOrIgnoreStmt.setString(9, "");
+						pInsertOrIgnoreStmt.setString(10, "");
+						pInsertOrIgnoreStmt.setInt(11, 0);
 						pInsertOrIgnoreStmt.addBatch();
 						insertOrIgnoreBatchPopulated = true;
 					}

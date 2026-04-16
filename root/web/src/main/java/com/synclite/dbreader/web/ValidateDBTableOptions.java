@@ -24,6 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -231,7 +233,7 @@ public class ValidateDBTableOptions extends HttpServlet {
 		} catch (Exception e) {
 			//System.out.println("exception : " + e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("configureDBTableOptions.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("configureDBTableOptions.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			throw new ServletException(e);
 		}
 	}

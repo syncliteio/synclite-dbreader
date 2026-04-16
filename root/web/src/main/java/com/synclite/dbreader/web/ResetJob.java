@@ -24,6 +24,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -143,7 +145,7 @@ public class ResetJob extends HttpServlet {
 			}
 			if(currentJobPID != 0) {
 				String errorMessage = "A job is already running with Process ID : " + currentJobPID + ". Please stop the job and then run Reset Job";
-				request.getRequestDispatcher("resetJob.jsp?errorMsg=" + errorMessage).forward(request, response);
+				request.getRequestDispatcher("resetJob.jsp?errorMsg=" + URLEncoder.encode(errorMessage, StandardCharsets.UTF_8.name())).forward(request, response);
 			} else {
 				this.globalTracer.info("Starting to reset Job : " + jobName + " under job directory : " + syncLiteDeviceDir);
 
@@ -319,7 +321,7 @@ public class ResetJob extends HttpServlet {
 		} catch (Exception e) {
 			//System.out.println("exception : " + e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("resetJob.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("resetJob.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			throw new ServletException(e);
 		}
 	}

@@ -481,9 +481,6 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcType  = SrcType.valueOf(propValue);
-				if (this.srcType == null) {
-					throw new SyncLitePropsException("Unsupported src-type specified : " + propValue);
-				}
 				
 				if (this.edition == SyncLiteEdition.DEVELOPER) {
 					if ((this.srcType == SrcType.POSTGRESQL) || (this.srcType == SrcType.SQLITE) || (this.srcType == SrcType.DUCKDB) || (this.srcType == SrcType.MONGODB)) {
@@ -551,9 +548,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcConnectionTimeoutS = Long.valueOf(propValue);
-				if (this.srcConnectionTimeoutS == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-connection-timeout-s in configuration file");
-				} else if (this.srcConnectionTimeoutS <= 0) {
+				if (this.srcConnectionTimeoutS <= 0) {
 					throw new SyncLitePropsException("Please specify a positive numeric value for src-connection-timeout-s in configuration file");
 				}
 			} catch (NumberFormatException e) {
@@ -567,9 +562,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcDBReaderIntervalS = Long.valueOf(propValue);
-				if (this.srcDBReaderIntervalS == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-dbreader-interval-s in configuration file");
-				} else if (this.srcDBReaderIntervalS <= 0) {
+				if (this.srcDBReaderIntervalS <= 0) {
 					throw new SyncLitePropsException("Please specify a positive numeric value for src-dbreader-interval-s in configuration file");
 				}
 			} catch (NumberFormatException e) {
@@ -583,12 +576,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.dbReaderStopAfterFirstIteration = Boolean.valueOf(propValue);
-				if (this.srcDBReaderIntervalS == null) {
-					throw new SyncLitePropsException("Invalid value specified for dbreader-stop-after-first-iteration in configuration file");
-				} else if (this.srcDBReaderIntervalS <= 0) {
-					throw new SyncLitePropsException("Please specify a positive numeric value for dbreader-stop-after-first-iteration in configuration file");
-				}
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				throw new SyncLitePropsException("Please specify a valid boolean value for dbreader-stop-after-first-iteration in configuration file");
 			}
 		} else {
@@ -599,9 +587,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcDBReaderBatchSize= Long.valueOf(propValue);
-				if (this.srcDBReaderBatchSize == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-dbreader-batch-size in configuration file");
-				} else if (this.srcDBReaderBatchSize <= 0) {
+				if (this.srcDBReaderBatchSize <= 0) {
 					throw new SyncLitePropsException("Please specify a positive numeric value for src-dbreader-batch-size in configuration file");
 				}
 			} catch (NumberFormatException e) {
@@ -615,9 +601,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcDBReaderProcessors = Integer.valueOf(propValue);
-				if (this.srcDBReaderProcessors== null) {
-					throw new SyncLitePropsException("Invalid value specified for src-dbreader-processors in configuration file");
-				} else if (this.srcDBReaderProcessors <= 0) {
+				if (this.srcDBReaderProcessors <= 0) {
 					throw new SyncLitePropsException("Please specify a positive numeric value for src-dbreader-processors in configuration file");
 				}
 			} catch(NumberFormatException e) {
@@ -645,8 +629,9 @@ public class ConfLoader {
 
 		propValue = properties.get("src-object-type");
 		if (propValue != null) {
-			this.srcObjectType = ObjectType.valueOf(propValue);
-			if (this.srcObjectType == null) {
+			try {
+				this.srcObjectType = ObjectType.valueOf(propValue);
+			} catch (IllegalArgumentException e) {
 				throw new SyncLitePropsException("Invalid value specified for src-object-type in configuration file");
 			}
 		} else {
@@ -660,8 +645,9 @@ public class ConfLoader {
 
 		propValue = properties.get("src-object-metadata-read-method");
 		if (propValue != null) {
-			this.srcObjectMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
-			if (this.srcObjectMetadataReadMethod == null) {
+			try {
+				this.srcObjectMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
+			} catch (IllegalArgumentException e) {
 				throw new SyncLitePropsException("Invalid value specified for src-object-metadata-read-method in configuration file");
 			}
 		} else {
@@ -670,8 +656,9 @@ public class ConfLoader {
 
 		propValue = properties.get("src-column-metadata-read-method");
 		if (propValue != null) {
-			this.srcColumnMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
-			if (this.srcColumnMetadataReadMethod == null) {
+			try {
+				this.srcColumnMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
+			} catch (IllegalArgumentException e) {
 				throw new SyncLitePropsException("Invalid value specified for src-column-metadata-read-method in configuration file");
 			}
 		} else {
@@ -680,8 +667,9 @@ public class ConfLoader {
 
 		propValue = properties.get("src-constraint-metadata-read-method");
 		if (propValue != null) {
-			this.srcConstraintMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
-			if (this.srcConstraintMetadataReadMethod == null) {
+			try {
+				this.srcConstraintMetadataReadMethod = MetadataReadMethod.valueOf(propValue);
+			} catch (IllegalArgumentException e) {
 				throw new SyncLitePropsException("Invalid value specified for src-constraint-metadata-read-method in configuration file");
 			}
 		} else {
@@ -690,98 +678,49 @@ public class ConfLoader {
 
 		propValue = properties.get("src-infer-schema-changes");
 		if (propValue != null) {
-			try {
-				this.srcInferSchemaChanges = Boolean.valueOf(propValue);
-				if (this.srcInferSchemaChanges == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-infer-schema-changes in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-infer-schema-changes in configuration file");
-			}
+			this.srcInferSchemaChanges = Boolean.valueOf(propValue);
 		} else {
 			this.srcInferSchemaChanges = false;
 		}
 
 		propValue = properties.get("src-infer-object-drop");
 		if (propValue != null) {
-			try {
-				this.srcInferObjectDrop = Boolean.valueOf(propValue);
-				if (this.srcInferObjectDrop == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-infer-object-drop in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-infer-object-drop in configuration file");
-			}
+			this.srcInferObjectDrop = Boolean.valueOf(propValue);
 		} else {
 			this.srcInferObjectDrop = false;
 		}
 
 		propValue = properties.get("src-infer-object-create");
 		if (propValue != null) {
-			try {
-				this.srcInferObjectCreate = Boolean.valueOf(propValue);
-				if (this.srcInferObjectCreate == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-infer-object-create in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-infer-object-create in configuration file");
-			}
+			this.srcInferObjectCreate = Boolean.valueOf(propValue);
 		} else {
 			this.srcInferObjectCreate = false;
 		}
 
 		propValue = properties.get("src-reload-objects");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjects = Boolean.valueOf(propValue);
-				if (this.srcReloadObjects == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-objects in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-objects in configuration file");
-			}
+			this.srcReloadObjects = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjects = false;
 		}
 
 		propValue = properties.get("src-reload-objects-on-each-job-restart");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjectsOnEachJobRestart = Boolean.valueOf(propValue);
-				if (this.srcReloadObjectsOnEachJobRestart == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-objects-on-each-job-restart in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-objects-on-each-job-restart in configuration file");
-			}
+			this.srcReloadObjectsOnEachJobRestart = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjectsOnEachJobRestart = false;
 		}
 
 		propValue = properties.get("src-reload-object-schemas");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjectSchemas = Boolean.valueOf(propValue);
-				if (this.srcReloadObjectSchemas == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas in configuration file");
-			}
+			this.srcReloadObjectSchemas = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjectSchemas = false;
 		}
 
 		propValue = properties.get("src-reload-object-schemas-on-each-job-restart");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjectSchemasOnEachJobRestart = Boolean.valueOf(propValue);
-				if (this.srcReloadObjectSchemasOnEachJobRestart == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas-on-each-job-restart in configuration file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas-on-each-job-restart in configuration file");
-			}
+			this.srcReloadObjectSchemasOnEachJobRestart = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjectSchemasOnEachJobRestart = false;
 		}
@@ -856,7 +795,7 @@ public class ConfLoader {
 				throw new SyncLitePropsException("Invalid value specified for src-alphabetic-value-mask in configuration file, please specify a single alphabetic character");
 			} 
 			if (!this.srcAlphabeticValueMask.matches("[a-zA-Z]")) {
-				throw new SyncLitePropsException("Invalid value specified for src-numeric-value-mask in configuration file, please specify a single alphabetic character");
+				throw new SyncLitePropsException("Invalid value specified for src-alphabetic-value-mask in configuration file, please specify a single alphabetic character");
 			}
 		} else {
 			this.srcAlphabeticValueMask = "X";
@@ -867,9 +806,7 @@ public class ConfLoader {
 		if (propValue != null) {
 			try {
 				this.srcDBReaderObjectRecordLimit = Long.valueOf(propValue);
-				if (this.srcDBReaderObjectRecordLimit == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-dbreader-object-record-limit in configuration file");
-				} else if (this.srcDBReaderObjectRecordLimit < 0) {
+				if (this.srcDBReaderObjectRecordLimit < 0) {
 					throw new SyncLitePropsException("Please specify a non-negative numeric value for src-dbreader-object-record-limit in configuration file");
 				}
 			} catch (NumberFormatException e) {
@@ -881,84 +818,42 @@ public class ConfLoader {
 
 		propValue = properties.get("src-read-null-incremental-key-records");
 		if (propValue != null) {
-			try {
-				this.srcReadNullIncrementalKeyRecords = Boolean.valueOf(propValue);
-				if (this.srcReadNullIncrementalKeyRecords == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-read-null-incremental-key-records in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a valid boolean value for src-read-null-incremental-key-records in configuration file");
-			}
+			this.srcReadNullIncrementalKeyRecords = Boolean.valueOf(propValue);
 		} else {
 			this.srcReadNullIncrementalKeyRecords = false;
 		}
 
 		propValue = properties.get("src-compute-max-incremental-key-in-db");
 		if (propValue != null) {
-			try {
-				this.srcComputeMaxIncrementalKeyInDB = Boolean.valueOf(propValue);
-				if (this.srcComputeMaxIncrementalKeyInDB == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-compute-max-incremental-key-in-db in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a valid boolen value for src-compute-max-incremental-key-in-db in configuration file");
-			}
+			this.srcComputeMaxIncrementalKeyInDB = Boolean.valueOf(propValue);
 		} else {
 			this.srcComputeMaxIncrementalKeyInDB = true;
 		}
 
 		propValue = properties.get("src-quote-object-names");
 		if (propValue != null) {
-			try {
-				this.srcQuoteObjectNames = Boolean.valueOf(propValue);
-				if (this.srcQuoteObjectNames == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-quote-object-names in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a positive numeric value for src-quote-object-names in configuration file");
-			}
+			this.srcQuoteObjectNames = Boolean.valueOf(propValue);
 		} else {
 			this.srcQuoteObjectNames = false;
 		}
 
 		propValue = properties.get("src-quote-column-names");
 		if (propValue != null) {
-			try {
-				this.srcQuoteColumnNames = Boolean.valueOf(propValue);
-				if (this.srcQuoteColumnNames == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-quote-column-names in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a positive numeric value for src-quote-column-names in configuration file");
-			}
+			this.srcQuoteColumnNames = Boolean.valueOf(propValue);
 		} else {
 			this.srcQuoteColumnNames = false;
 		}
 
 		propValue = properties.get("src-use-catalog-scope-resolution");
 		if (propValue != null) {
-			try {
-				this.srcUseCatalogScopeResolution = Boolean.valueOf(propValue);
-				if (this.srcUseCatalogScopeResolution == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-use-catalog-scope-resolution in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a positive numeric value for src-use-catalog-scope-resolution in configuration file");
-			}
+			this.srcUseCatalogScopeResolution = Boolean.valueOf(propValue);
 		} else {
 			this.srcUseCatalogScopeResolution = true;
 		}
 
 		propValue = properties.get("src-use-schema-scope-resolution");
 		if (propValue != null) {
-			try {
-				this.srcUseSchemaScopeResolution = Boolean.valueOf(propValue);
-				if (this.srcUseSchemaScopeResolution == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-use-schema-scope-resolution in configuration file");
-				} 
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Please specify a positive numeric value for src-use-schema-scope-resolution in configuration file");
-			}
+			this.srcUseSchemaScopeResolution = Boolean.valueOf(propValue);
 		} else {
 			this.srcUseSchemaScopeResolution = true;
 		}
@@ -966,14 +861,7 @@ public class ConfLoader {
 		if (srcType == SrcType.CSV) {
 			propValue = properties.get("src-csv-files-with-headers");
 			if (propValue != null) {
-				try {
-					this.srcCsvFilesWithHeaders = Boolean.valueOf(propValue);
-					if (this.srcCsvFilesWithHeaders == null) {
-						throw new SyncLitePropsException("Invalid value specified for src-csv-files-with-headers in configuration file");
-					} 
-				} catch (NumberFormatException e) {
-					throw new SyncLitePropsException("Please specify a valid boolean value for src-csv-files-with-headers in configuration file");
-				}
+				this.srcCsvFilesWithHeaders = Boolean.valueOf(propValue);
 			} else {
 				this.srcCsvFilesWithHeaders = true;
 			}
@@ -1025,14 +913,7 @@ public class ConfLoader {
 			
 			propValue = properties.get("src-csv-files-ignore-empty-lines");
 			if (propValue != null) {
-				try {
-					this.srcCsvFilesIgnoreEmptyLines = Boolean.valueOf(propValue);
-					if (this.srcCsvFilesIgnoreEmptyLines == null) {
-						throw new SyncLitePropsException("Invalid value specified for src-csv-files-ignore-empty-lines in configuration file");
-					} 
-				} catch (NumberFormatException e) {
-					throw new SyncLitePropsException("Please specify a positive numeric value for src-csv-files-ignore-empty-lines in configuration file");
-				}
+				this.srcCsvFilesIgnoreEmptyLines = Boolean.valueOf(propValue);
 			} else {
 				this.srcCsvFilesIgnoreEmptyLines = true;
 			}
@@ -1040,14 +921,7 @@ public class ConfLoader {
 
 			propValue = properties.get("src-csv-files-trim-fields");
 			if (propValue != null) {
-				try {
-					this.srcCsvFilesTrimFields = Boolean.valueOf(propValue);
-					if (this.srcCsvFilesTrimFields == null) {
-						throw new SyncLitePropsException("Invalid value specified for src-csv-files-trim-fields in configuration file");
-					} 
-				} catch (NumberFormatException e) {
-					throw new SyncLitePropsException("Please specify a positive numeric value for src-csv-files-trim-fields in configuration file");
-				}
+				this.srcCsvFilesTrimFields = Boolean.valueOf(propValue);
 			} else {
 				this.srcCsvFilesTrimFields = false;
 			}
@@ -1057,11 +931,8 @@ public class ConfLoader {
 				if (propValue != null) {
 					try {
 						this.srcFileStorageType = FileStorageType.valueOf(propValue);
-						if (this.srcFileStorageType == null) {
-							throw new SyncLitePropsException("Invalid value specified for src-file-storage-type in configuration file");
-						} 
 					} catch (IllegalArgumentException e) {
-						throw new SyncLitePropsException("Please specify a a valid value for src-file-storage-type in configuration file");
+						throw new SyncLitePropsException("Please specify a valid value for src-file-storage-type in configuration file");
 					}
 				} else {
 					throw new SyncLitePropsException("src-file-storage-type must be specified when source type is CSV");
@@ -1149,8 +1020,9 @@ public class ConfLoader {
 		
 		propValue = properties.get("dbreader-trace-level");
 		if (propValue != null) {
-			this.traceLevel= TraceLevel.valueOf(propValue);
-			if (this.traceLevel == null) {
+			try {
+				this.traceLevel= TraceLevel.valueOf(propValue);
+			} catch (IllegalArgumentException e) {
 				throw new SyncLitePropsException("Invalid value specified for dbreader-trace-level in configuration file");
 			}
 		} else {
@@ -1159,8 +1031,9 @@ public class ConfLoader {
 		
 		propValue = properties.get("dbreader-update-statistics-interval-s");
 		if (propValue != null) {
-			this.updateStatisticsIntervalS = Long.valueOf(propValue);
-			if (this.updateStatisticsIntervalS == null) {
+			try {
+				this.updateStatisticsIntervalS = Long.valueOf(propValue);
+			} catch (NumberFormatException e) {
 				throw new SyncLitePropsException("Invalid value specified for dbreader-update-statistics-interval-s in configuration file");
 			}
 		} else {
@@ -1169,28 +1042,23 @@ public class ConfLoader {
 
 		propValue = properties.get("dbreader-enable-statistics-collector");
 		if (propValue != null) {
-			this.enableStatisticsCollector =  Boolean.valueOf(propValue);
-			if (this.enableStatisticsCollector == null) {
-				throw new SyncLitePropsException("Invalid value specified for dbreader-enable-statistics-collector in configuration file");
-			}
+			this.enableStatisticsCollector = Boolean.valueOf(propValue);
 		} else {
 			this.enableStatisticsCollector = true;
 		}
 
 		propValue = properties.get("dbreader-retry-failed-objects");
 		if (propValue != null) {
-			this.retryFailedObjects  = Boolean.valueOf(propValue);
-			if (this.retryFailedObjects == null) {
-				throw new SyncLitePropsException("Invalid value specified for dbreader-retry-failed-objects in configuration file");
-			}
+			this.retryFailedObjects = Boolean.valueOf(propValue);
 		} else {
 			this.retryFailedObjects = true;
 		}
 
 		propValue = properties.get("dbreader-failed-object-retry-interval-s");
 		if (propValue != null) {
-			this.failedObjectRetryIntervalS = Long.valueOf(propValue);
-			if (this.failedObjectRetryIntervalS == null) {
+			try {
+				this.failedObjectRetryIntervalS = Long.valueOf(propValue);
+			} catch (NumberFormatException e) {
 				throw new SyncLitePropsException("Invalid value specified for dbreader-failed-object-retry-interval-s in configuration file");
 			}
 		} else {
@@ -1206,10 +1074,6 @@ public class ConfLoader {
 			for (String allowedSrcName : allowedSrcs) {
 				try {
 					allowedSrc = SrcType.valueOf(allowedSrcName);
-					if (allowedSrc == null) {
-						//throw new SyncLitePropsException("Invalid value specified in allowed-sources in license file : " + allowedDstName);
-						//Ignore unsupported dst type
-					}
 					allowedSources.add(allowedSrc);
 				} catch (IllegalArgumentException e) {
 					//throw new SyncLitePropsException("Invalid value specified in allowed-sources in license file : " + allowedDstName);
@@ -1235,10 +1099,6 @@ public class ConfLoader {
 			for (String allowedSrcAppName : allowedSrcAppTypes) {
 				try {
 					allowedSrcApp = SrcAppType.valueOf(allowedSrcAppName);
-					if (allowedSrcApp == null) {
-						//throw new SyncLitePropsException("Invalid value specified in allowed-source-app-types in license file : " + allowedDstName);
-						//Ignore unsupported dst type
-					}
 					allowedSourceAppTypes.add(allowedSrcApp);
 				} catch (IllegalArgumentException e) {
 					//throw new SyncLitePropsException("Invalid value specified in allowed-source-app-types in license file : " + allowedDstName);
@@ -1259,28 +1119,14 @@ public class ConfLoader {
 	private void validateAndProcessArgProperties() throws SyncLitePropsException {
 		String propValue = properties.get("src-reload-objects");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjects = Boolean.valueOf(propValue);
-				if (this.srcReloadObjects == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-objects in arguments file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-objects in arguments file");
-			}
+			this.srcReloadObjects = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjects = false;
 		}
 
 		propValue = properties.get("src-reload-object-schemas");
 		if (propValue != null) {
-			try {
-				this.srcReloadObjectSchemas = Boolean.valueOf(propValue);
-				if (this.srcReloadObjectSchemas == null) {
-					throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas in arguments file");
-				}
-			} catch (NumberFormatException e) {
-				throw new SyncLitePropsException("Invalid value specified for src-reload-object-schemas in configuration file");
-			}
+			this.srcReloadObjectSchemas = Boolean.valueOf(propValue);
 		} else {
 			this.srcReloadObjectSchemas = false;
 		}	
@@ -1358,9 +1204,9 @@ public class ConfLoader {
 		case MYSQL:
 			return "MySQL";
 		case POSTGRESQL:
-			return "POSTGRESQL";
+			return "PostgreSQL";
 		case SQLITE:
-			return "SQLITE";		
+			return "SQLite";		
 		}
 		return this.srcType.toString();
 	}

@@ -21,6 +21,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -440,11 +442,9 @@ public class ValidateDBTables extends HttpServlet {
 
 			if(currentJobPID > 0) {
 				if (isWindows()) {
-					Runtime.getRuntime().exec("taskkill /F /PID " + currentJobPID);
-				} else {
-					Runtime.getRuntime().exec("kill -9 " + currentJobPID);
-				}
-			}
+						Runtime.getRuntime().exec(new String[]{"taskkill", "/F", "/PID", String.valueOf(currentJobPID)});
+					} else {
+						Runtime.getRuntime().exec(new String[]{"kill", "-9", String.valueOf(currentJobPID)});
 
 			//Get env variable 
 			String jvmArgs = "";
@@ -563,9 +563,9 @@ public class ValidateDBTables extends HttpServlet {
 			this.globalTracer.error("Exception while processing request:", e);
 			String errorMsg = e.getMessage();
 			if (dbReaderObjectConfigurationMethodStr.equals("GUI")) {
-				request.getRequestDispatcher("configureTables.jsp?errorMsg=" + errorMsg).forward(request, response);
+				request.getRequestDispatcher("configureTables.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			} else {
-				request.getRequestDispatcher("configureTablesJSON.jsp?errorMsg=" + errorMsg).forward(request, response);
+				request.getRequestDispatcher("configureTablesJSON.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 			}
 			throw new ServletException(e);
 		}

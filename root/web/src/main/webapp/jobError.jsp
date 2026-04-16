@@ -14,6 +14,12 @@
 
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,7 +35,7 @@
 		String jobType = request.getParameter("jobType");
 		String errorMsg = request.getParameter("errorMsg");		
 		if (errorMsg != null) {
-			out.println("<h4 style=\"color: red;\">Failed to execute " + jobType + " job : " + errorMsg + "</h4>");
+			out.println("<h4 style=\"color: red;\">Failed to execute " + escHtml(jobType) + " job : " + escHtml(errorMsg) + "</h4>");
 		}
 		%>
 	</div>

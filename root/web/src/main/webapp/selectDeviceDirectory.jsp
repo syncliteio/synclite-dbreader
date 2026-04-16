@@ -16,7 +16,12 @@
 <%@page import="java.nio.file.Path"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
-<!DOCTYPE html>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,7 +42,7 @@
 			errorMsg = "Job name must be upto 16 characters in length";
 		}
 		if (!jobName.matches("[a-zA-Z0-9-_]+")) {
-			errorMsg = "Specified job name is invalid. Allowed characters are alphanumeric, hyphen or underscrore characters.";
+			errorMsg = "Specified job name is invalid. Allowed characters are alphanumeric, hyphen or underscore characters.";
 		}		
 	} else {
 		if (session.getAttribute("job-name") != null) {
@@ -60,11 +65,12 @@
 		<h2>Configure SyncLite DBReader</h2>
 		<%	
 		if (errorMsg != null) {
-			out.println("<h4 style=\"color: red;\">" + errorMsg + "</h4>");
+			out.println("<h4 style=\"color: red;\">" + escHtml(errorMsg) + "</h4>");
 		}
 		%>
 	
 		<form method="post" action="validateDeviceDirectory">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 				<tbody>
 					<tr>
@@ -73,7 +79,7 @@
 					</tr>
 					<tr>
 						<td>SyncLite Device Directory</td>
-						<td><input type="text" size = 60 id="synclite-device-dir" name="synclite-device-dir" value="<%=syncLiteDeviceDir%>" title="Specify a work directory for SyncLite dbreader to store SyncLite devices holding extracted data frpom source database."/></td>
+						<td><input type="text" size = 60 id="synclite-device-dir" name="synclite-device-dir" value="<%=syncLiteDeviceDir%>" title="Specify a work directory for SyncLite dbreader to store SyncLite devices holding extracted data from source database."/></td>
 					</tr>					
 				</tbody>
 			</table>

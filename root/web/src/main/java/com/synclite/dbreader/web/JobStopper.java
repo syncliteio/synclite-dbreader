@@ -99,9 +99,9 @@ public class JobStopper implements Job {
 			//Start if the job is not found
 			if(currentJobPID > 0) {
 				if (isWindows()) {
-					Runtime.getRuntime().exec("taskkill /F /PID " + currentJobPID);
+					Runtime.getRuntime().exec(new String[]{"taskkill", "/F", "/PID", String.valueOf(currentJobPID)});
 				} else {
-					Runtime.getRuntime().exec("kill -9 " + currentJobPID);
+					Runtime.getRuntime().exec(new String[]{"kill", "-9", String.valueOf(currentJobPID)});
 				}
 				jobStopTime = System.currentTimeMillis();
 				jobStopStatus = "SUCCESS";

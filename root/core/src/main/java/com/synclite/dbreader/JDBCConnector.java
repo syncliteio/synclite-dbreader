@@ -92,18 +92,26 @@ public class JDBCConnector {
 
     public Connection connect() throws SrcExecutionException {
         try {
-            //return DriverManager.getConnection(PropsLoader.getInstance().getDstConnStr());
         	Connection c = getDataSource().getConnection();
-        	if (connInitStmt != null) {
-        		try (Statement s = c.createStatement()) {
-        			s.execute(connInitStmt);
-        		} catch (SQLException e) {
-        			throw new SQLException("Failed to execute connection intialization statement : " + connInitStmt + " : " + e.getMessage(), e);
-        		}
+        	try {
+	        	if (connInitStmt != null) {
+	        		try (Statement s = c.createStatement()) {
+	        			s.execute(connInitStmt);
+	        		}
+	        	}
+        	} catch (SQLException e) {
+        		try { c.close(); } catch (SQLException ex) { /* ignore */ }
+        		throw new SQLException("Failed to execute connection initialization statement : " + connInitStmt + " : " + e.getMessage(), e);
         	}
         	return c;
         } catch (SQLException e) {
-            throw new SrcExecutionException("Failed to connect to destination database : " + e.getMessage(), e);
+            throw new SrcExecutionException("Failed to connect to source database : " + e.getMessage(), e);
+        }
+    }
+
+    public void close() {
+        if (dataSource instanceof HikariDataSource) {
+            ((HikariDataSource) dataSource).close();
         }
     }
 }

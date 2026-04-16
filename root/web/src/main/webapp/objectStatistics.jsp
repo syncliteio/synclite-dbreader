@@ -103,6 +103,7 @@ function autoRefresh() {
 		%>
 			<center>
 				<form name="tableForm" id="tableForm" method="post">
+					<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 					<table>
 						<tr>
 						<td>
@@ -269,7 +270,7 @@ function autoRefresh() {
 								}
 							}
 						} catch(Exception e) {
-							out.println("<h4 style=\"color: red;\">Failed to read dbreader statistics : " + e.getMessage() + ". Please tryr refreshing the page.</h4>");
+							out.println("<h4 style=\"color: red;\">Failed to read dbreader statistics : " + e.getMessage() + ". Please try refreshing the page.</h4>");
 						}
 					%>
 			</table>			

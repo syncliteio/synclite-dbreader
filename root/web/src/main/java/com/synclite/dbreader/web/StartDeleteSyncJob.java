@@ -19,6 +19,8 @@ package com.synclite.dbreader.web;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -153,12 +155,12 @@ public class StartDeleteSyncJob extends HttpServlet {
 				else 
 				{
 					String errorMessage = "A job is already running with Process ID : " + currentJobPID + ". Please stop the job and then run Delete Sync Job";
-					response.sendRedirect("jobError.jsp?jobType=DeleteSync&errorMsg="+ errorMessage);
+					response.sendRedirect("jobError.jsp?jobType=DeleteSync&errorMsg="+ URLEncoder.encode(errorMessage, StandardCharsets.UTF_8.name()));
 				}
 			}
 		} catch (Exception e) {
 			String errorMsg = e.getMessage();
-			response.sendRedirect("jobError.jsp?jobType=StartDeleteSync&errorMsg=" + errorMsg);
+			response.sendRedirect("jobError.jsp?jobType=StartDeleteSync&errorMsg=" + URLEncoder.encode(errorMsg != null ? errorMsg : "Unknown error", StandardCharsets.UTF_8.name()));
 		}
 	}
 	

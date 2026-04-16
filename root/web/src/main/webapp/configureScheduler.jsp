@@ -19,6 +19,12 @@
 <%@page import="java.util.HashMap"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
+<%!
+private static String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;");
+}
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -40,7 +46,7 @@
 			String syncLiteDeviceDir = session.getAttribute("synclite-device-dir").toString();
 			String errorMsg = request.getParameter("errorMsg");
 			if (errorMsg != null) {
-				out.println("<h4 style=\"color: red;\">Failed to configure SyncLite DB Reader job scheduler : " + errorMsg + "</h4>");
+				out.println("<h4 style=\"color: red;\">Failed to configure SyncLite DB Reader job scheduler : " + escHtml(errorMsg) + "</h4>");
 			}
 
 			Integer numSchedules = 1;
@@ -147,6 +153,7 @@
 		%>
 		
 		<form action="${pageContext.request.contextPath}/configureScheduler" method="post">
+			<input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") %>"/>
 			<table>
 			<tr></tr>
 				<tr>

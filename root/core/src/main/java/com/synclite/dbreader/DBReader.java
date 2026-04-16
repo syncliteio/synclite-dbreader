@@ -17,7 +17,6 @@
 package com.synclite.dbreader;
 
 import java.nio.file.Path;
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -94,7 +93,7 @@ public class DBReader {
 	}
 	
 	public void processObject() throws SyncLiteException {
-		String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+		String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 		boolean reloadingObject = false;
 		//Check for refresh schema
 		if (srcObject.doReloadSchema() || srcObject.doReloadObject()) {
@@ -132,7 +131,7 @@ public class DBReader {
 					}				
 
 					try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
-						try(TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+						try(DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 							deviceStmt.execute(srcObject.getRefreshTableSql());
 							srcObject.setLoggedRereshSchemas();
 							tracer.info("Logged REFRESH SCHEMA for object : " + srcObject.getFullName());
@@ -198,7 +197,7 @@ public class DBReader {
 					if (!newDDLs.isEmpty()) {
 						//Publish DDLs in the device 
 						try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
-							try(TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+							try(DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 								for (String ddl : newDDLs) {
 									this.tracer.info("Publishing inferred DDL on device : " + ddl );
 									deviceStmt.execute(ddl);
@@ -271,7 +270,7 @@ public class DBReader {
 						if (!newDDLs.isEmpty()) {
 							//Publish DDLs in the device 
 							try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
-								try(TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+								try(DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 									for (String ddl : newDDLs) {
 										this.tracer.info("Publishing inferred DDL on device : " + ddl );
 										deviceStmt.execute(ddl);
@@ -299,7 +298,7 @@ public class DBReader {
 								//file all get in sync with respect to the column order
 								//
 								try(Connection deviceConn = DriverManager.getConnection(syncLiteDeviceURL)) {
-									try(TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) {
+									try(DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) {
 										deviceStmt.execute(srcObject.getRefreshTableSql());
 
 										//Read last published commitid now.
@@ -335,7 +334,7 @@ public class DBReader {
 
 	protected void logRead() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 
 			//Incremental replication
 			tracer.debug("Starting log read on object : " + srcObject.getFullName() + ", partition : " + srcObject.getPartitionIdx());			
@@ -384,7 +383,7 @@ public class DBReader {
 
 	protected void incrementalRead(boolean reloadingObject) throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 
 			//Incremental replication
 			tracer.info("Starting incremental read on object : " + srcObject.getFullName() + ", partition : " + srcObject.getPartitionIdx());			
@@ -435,7 +434,7 @@ public class DBReader {
 			//Execute a max query to get max value of incremental key from source db object
 			HashMap<String,String> maxIncrementalKeyColumnVals = new HashMap<String, String>();
 			boolean computeMaxIncrementalKeyValsInDB = ConfLoader.getInstance().getSrcComputeMaxIncrementalKeyInDB();
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 
 			String selectSql = srcObject.getSelectTableSql();
 			if (computeMaxIncrementalKeyValsInDB) {
@@ -478,20 +477,31 @@ public class DBReader {
 					throw new SyncLiteException("Failed to execute max query " + srcObject.getMaxSql() + " on source object " + srcObject.getFullName(), e);
 				}
 				tracer.info("Finished max query : " + srcObject.getMaxSql() + ", read max value for incremental key columns : ");				
+				// Build replacement pairs in order, then apply in reverse to prevent $1 matching inside $10
+				List<String[]> replacements = new ArrayList<>();
 				int idx = 1;
 				for (String incrKey : srcObject.getIncrementalKeyColumns()) {
 					String incrKeyValue = maxIncrementalKeyColumnVals.get(incrKey); 
 					tracer.info("Incremental key column name : "  + incrKey + ", max value : " + incrKeyValue);
-					selectSql = selectSql.replace("$" + String.valueOf(idx), srcObject.getLastReadIncrementalKeyColVal(incrKey)).replace("$" + String.valueOf(idx + 1), incrKeyValue);
+					replacements.add(new String[]{"$" + idx, srcObject.getLastReadIncrementalKeyColVal(incrKey)});
+					replacements.add(new String[]{"$" + (idx + 1), incrKeyValue});
 					idx = idx + 2;
 				}
+				for (int i = replacements.size() - 1; i >= 0; i--) {
+					selectSql = selectSql.replace(replacements.get(i)[0], replacements.get(i)[1]);
+				}
 			} else {
+				// Build replacement pairs in order, then apply in reverse to prevent $1 matching inside $10
+				List<String[]> replacements = new ArrayList<>();
 				int idx = 1;
 				for (String incrKey : srcObject.getIncrementalKeyColumns()) {
 					String incrKeyValue = maxIncrementalKeyColumnVals.get(incrKey); 
-					selectSql = selectSql.replace("$" + String.valueOf(idx), srcObject.getLastReadIncrementalKeyColVal(incrKey));
+					replacements.add(new String[]{"$" + idx, srcObject.getLastReadIncrementalKeyColVal(incrKey)});
 					++idx;
-				}				
+				}
+				for (int i = replacements.size() - 1; i >= 0; i--) {
+					selectSql = selectSql.replace(replacements.get(i)[0], replacements.get(i)[1]);
+				}
 			}
 
 			long batchRecCount = 0;
@@ -518,7 +528,7 @@ public class DBReader {
 				//deviceConn.setAutoCommit(false);
 				try(Statement srcStmt = srcConn.createStatement();
 						PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) 
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) 
 				{
 					try(ResultSet srcRS = srcStmt.executeQuery(selectSql)) {
 						ResultSetMetaData metaData = srcRS.getMetaData();
@@ -528,9 +538,8 @@ public class DBReader {
 							for (int i = 1; i <= columnCount; ++i) {
 								if (metaData.getColumnType(i) == Types.BLOB) {
 									// Treat as a blob (byte array)
-									Blob blob = srcRS.getBlob(i);
-									if (blob != null) {
-										byte[] dstVal = blob.getBytes(1, (int) blob.length());
+									byte[] dstVal = srcRS.getBytes(i);
+									if (dstVal != null) {
 										devicePreparedStmt.setBytes(i, dstVal);
 									} else {
 										// Handle null BLOB values
@@ -620,7 +629,7 @@ public class DBReader {
 						//
 						for (Map.Entry<String, String> entry : maxIncrementalKeyColumnVals.entrySet()) {						
 							if (entry.getValue() != null) {
-								deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + entry.getValue() + "' WHERE object_name = '" + srcObject.getName() + "' AND column_name = '" + entry.getKey() + "'");
+								deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + escapeSqlLiteral(entry.getValue()) + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "' AND column_name = '" + escapeSqlLiteral(entry.getKey()) + "'");
 								srcObject.setLastReadIncrementalKeyColVal(entry.getKey(), entry.getValue());
 							}
 						}
@@ -715,7 +724,7 @@ public class DBReader {
 
 	protected long fullReadInternal() throws SyncLiteException {
 		try {
-			String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+			String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 			long batchRecCount = 0;
 			long totalRecCount = 0;
 			long batchCount = 1;
@@ -728,7 +737,7 @@ public class DBReader {
 				//deviceConn.setAutoCommit(false);
 				try(Statement srcStmt = srcConn.createStatement();
 						PreparedStatement devicePreparedStmt = deviceConn.prepareStatement(srcObject.getInsertTableSql());
-						TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) 
+						DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) 
 				{
 					try(ResultSet srcRS = srcStmt.executeQuery(srcObject.getSelectTableSql())) {
 						ResultSetMetaData metaData = srcRS.getMetaData();
@@ -739,9 +748,8 @@ public class DBReader {
 								int t = metaData.getColumnType(i);
 								if (metaData.getColumnType(i) == Types.BLOB) {
 									// Treat as a blob (byte array)
-									Blob blob = srcRS.getBlob(i);
-									if (blob != null) {
-										byte[] dstVal = blob.getBytes(1, (int) blob.length());
+									byte[] dstVal = srcRS.getBytes(i);
+									if (dstVal != null) {
 										devicePreparedStmt.setBytes(i, dstVal);
 									} else {
 										// Handle null BLOB values
@@ -797,7 +805,7 @@ public class DBReader {
 					if (totalRecCount > 0) {						
 
 						//Just update the single entry with Long.MAX_VALUE.
-						deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + srcObject.getName() + "'");
+						deviceStmt.executeUnlogged("UPDATE synclite_dbreader_checkpoint SET column_value = '" + Long.MAX_VALUE + "' WHERE object_name = '" + escapeSqlLiteral(srcObject.getName()) + "'");
 						srcObject.setLastReadIncrementalKeyColVal("", String.valueOf(Long.MAX_VALUE));
 
 						//Publish a FINISHBATCH record
@@ -860,7 +868,7 @@ public class DBReader {
 	}
 
 	protected long fullReadKeysInternal() throws SyncLiteException {
-		String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+		String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 		tracer.info("Source object query : " + srcObject.getSelectKeyTableSql());
 		long batchRecCount = 0;
 		long totalRecCount = 0;
@@ -872,7 +880,7 @@ public class DBReader {
 			//deviceConn.setAutoCommit(false);
 
 			try(Statement srcStmt = srcConn.createStatement();
-					TelemetryStatement deviceStmt = (TelemetryStatement) deviceConn.createStatement()) 
+					DBLoggerStatement deviceStmt = (DBLoggerStatement) deviceConn.createStatement()) 
 			{
 				deviceStmt.execute(srcObject.getDropKeyTableSql());
 				deviceStmt.execute(srcObject.getCreateKeyTableSql());
@@ -885,9 +893,8 @@ public class DBReader {
 							for (int i = 1; i <= columnCount; ++i) {
 								if (metaData.getColumnType(i) == Types.BLOB) {
 									// Treat as a blob (byte array)
-									Blob blob = srcRS.getBlob(i);
-									if (blob != null) {
-										byte[] dstVal = blob.getBytes(1, (int) blob.length());
+									byte[] dstVal = srcRS.getBytes(i);
+									if (dstVal != null) {
 										devicePreparedStmt.setBytes(i, dstVal);
 									} else {
 										// Handle null BLOB values
@@ -964,7 +971,7 @@ public class DBReader {
 
 
 	public void processDeleteSync() throws SyncLiteException {
-		String syncLiteDeviceURL = "jdbc:synclite_telemetry:" + srcObject.getDeviceFilePath();
+		String syncLiteDeviceURL = "jdbc:synclite_dblogger:" + srcObject.getDeviceFilePath();
 		if (srcObject.hasUniqueKeyDefined()) {
 			fullReadKeys();
 		}
@@ -1035,6 +1042,13 @@ public class DBReader {
 	}
 
 	
+
+	protected static String escapeSqlLiteral(String value) {
+		if (value == null) {
+			return null;
+		}
+		return value.replace("'", "''");
+	}
 
 	public static DBReader getInstance(DBObject object, Logger tracer) throws SyncLiteException {
 		switch (ConfLoader.getInstance().getSrcType()) {

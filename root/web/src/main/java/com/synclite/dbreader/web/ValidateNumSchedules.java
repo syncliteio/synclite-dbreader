@@ -22,6 +22,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -94,7 +96,7 @@ public class ValidateNumSchedules extends HttpServlet {
 		} catch (Exception e) {
 			System.out.println("exception : " + e);
 			String errorMsg = e.getMessage();
-			request.getRequestDispatcher("configureNumSchedules.jsp?errorMsg=" + errorMsg).forward(request, response);
+			request.getRequestDispatcher("configureNumSchedules.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
 		}
 	}
 }
