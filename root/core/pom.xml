@@ -224,13 +224,6 @@
 			<version>0.2.21</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
-		<dependency>
-			<groupId>commons-net</groupId>
-			<artifactId>commons-net</artifactId>
-			<version>3.9.0</version>
-		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
 		<dependency>
 		    <groupId>org.mongodb</groupId>

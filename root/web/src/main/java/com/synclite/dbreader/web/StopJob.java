@@ -100,9 +100,11 @@ public class StopJob extends HttpServlet {
 				//request.getRequestDispatcher("dashboard.jsp").forward(request, response);
 				response.sendRedirect("dashboard.jsp");			
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
+			response.setStatus(500);
 			String errorMsg = e.getMessage();
 			response.sendRedirect("jobError.jsp?jobType=StartRead&errorMsg=" + URLEncoder.encode(errorMsg != null ? errorMsg : "Unknown error", StandardCharsets.UTF_8.name()));
+		
 		}
 	}
 
