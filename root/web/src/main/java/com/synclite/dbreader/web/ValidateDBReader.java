@@ -876,11 +876,9 @@ public class ValidateDBReader extends HttpServlet {
 			response.sendRedirect("configureTableOptions.jsp");
 
 		} catch (Exception e) {
-			//System.out.println("exception : " + e);
 			this.globalTracer.error("Exception while processing request:", e);
-			String errorMsg = e.getMessage();
+			String errorMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
 			request.getRequestDispatcher("configureDBReader.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
-			throw new ServletException(e);
 		}
 	}
 

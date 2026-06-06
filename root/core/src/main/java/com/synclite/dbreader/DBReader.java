@@ -244,28 +244,50 @@ public class DBReader {
 					if (ConfLoader.getInstance().getSrcInferSchemaChanges()) {
 						HashMap<String, String> newColDefMap = newObjectInfo.columnDefMap;
 						HashMap<String, String> oldColDefMap =  srcObject.getColDefMap();
+						List<String> alterDDLs = new ArrayList<String>();
+						List<String> addedColNames = new ArrayList<String>();
+						List<String> droppedColNames = new ArrayList<String>();
 						for (Map.Entry<String, String> entry : newColDefMap.entrySet()) {
 							String colName = entry.getKey();
 							String oldColDef = oldColDefMap.get(colName);
 							if (oldColDef != null) {
 								if (! areColDefsSame(entry.getValue(), oldColDef)) {
 									String alterDDL = "ALTER TABLE " + srcObject.getName() + " ALTER COLUMN " + DBObject.quoteColumnName(colName) + " " + newColDefMap.get(colName);
-									newDDLs.add(alterDDL);
+									alterDDLs.add(alterDDL);
 								}
 							} else {
-								String addColDDL = "ALTER TABLE " + srcObject.getName() + " ADD COLUMN " + DBObject.quoteColumnName(colName) + " " + entry.getValue();
-								newDDLs.add(addColDDL);
+								addedColNames.add(colName);
 							}
 						}
 
 						for (Map.Entry<String, String> entry : oldColDefMap.entrySet()) {
 							String colName = entry.getKey();
-							String newColDef = newColDefMap.get(colName);
-							if (newColDef == null) {
+							if (newColDefMap.get(colName) == null) {
+								droppedColNames.add(colName);
+							}
+						}
+
+						// Heuristic rename detection: exactly one added + one dropped column with
+						// matching column definitions => treat as RENAME COLUMN so destination
+						// preserves existing data instead of dropping it and adding an empty column.
+						if (addedColNames.size() == 1 && droppedColNames.size() == 1
+								&& areColDefsSame(newColDefMap.get(addedColNames.get(0)), oldColDefMap.get(droppedColNames.get(0)))) {
+							String oldName = droppedColNames.get(0);
+							String newName = addedColNames.get(0);
+							String renameDDL = "ALTER TABLE " + srcObject.getName() + " RENAME COLUMN " + DBObject.quoteColumnName(oldName) + " TO " + DBObject.quoteColumnName(newName);
+							newDDLs.add(renameDDL);
+							this.tracer.info("Inferred RENAME COLUMN for object " + srcObject.getFullName() + " : " + oldName + " -> " + newName);
+						} else {
+							for (String colName : addedColNames) {
+								String addColDDL = "ALTER TABLE " + srcObject.getName() + " ADD COLUMN " + DBObject.quoteColumnName(colName) + " " + newColDefMap.get(colName);
+								newDDLs.add(addColDDL);
+							}
+							for (String colName : droppedColNames) {
 								String dropDDL = "ALTER TABLE " + srcObject.getName() + " DROP COLUMN " + DBObject.quoteColumnName(colName);
 								newDDLs.add(dropDDL);
 							}
-						}					
+						}
+						newDDLs.addAll(alterDDLs);
 
 						if (!newDDLs.isEmpty()) {
 							//Publish DDLs in the device 

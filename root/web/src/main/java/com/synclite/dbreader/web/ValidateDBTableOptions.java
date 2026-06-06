@@ -231,10 +231,8 @@ public class ValidateDBTableOptions extends HttpServlet {
 				}
 			}
 		} catch (Exception e) {
-			//System.out.println("exception : " + e);
-			String errorMsg = e.getMessage();
+			String errorMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
 			request.getRequestDispatcher("configureDBTableOptions.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
-			throw new ServletException(e);
 		}
 	}
 

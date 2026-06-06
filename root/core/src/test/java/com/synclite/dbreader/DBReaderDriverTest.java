@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration test for DBReaderDriver with a SQLite source database.
  *
- * <p>Creates a SQLite source DB with two tables — the primary table covers all
+ * <p>Creates a SQLite source DB with two tables – the primary table covers all
  * supported data type categories (TEXT, VARCHAR, INTEGER, SMALLINT, BIGINT,
  * REAL, DOUBLE, FLOAT, NUMERIC, DECIMAL, BOOLEAN, DATE, DATETIME, TIMESTAMP,
  * BLOB, CLOB) and a second helper table used for DROP TABLE detection.
@@ -47,11 +47,11 @@ import org.junit.jupiter.api.Test;
  * capture enabled ({@code src-infer-schema-changes},
  * {@code src-infer-object-drop}).  Exercises three iterations:
  * <ol>
- *   <li>Initial read — creates devices and reads initial rows from both tables.</li>
- *   <li>Insert, update, soft-delete mutations — verifies incremental replay
+ *   <li>Initial read – creates devices and reads initial rows from both tables.</li>
+ *   <li>Insert, update, soft-delete mutations – verifies incremental replay
  *       (updates appear as INSERTs, soft-deletes produce DELETEs).</li>
- *   <li>DDL mutations — ALTER TABLE ADD/DROP COLUMN on primary table and
- *       DROP TABLE on second table — verifies schema change and table drop
+ *   <li>DDL mutations – ALTER TABLE ADD/DROP COLUMN on primary table and
+ *       DROP TABLE on second table – verifies schema change and table drop
  *       detection in the command log.</li>
  * </ol>
  */
@@ -73,20 +73,20 @@ class DBReaderDriverTest {
     @BeforeEach
     void setUp() throws Exception {
         syncliteRoot = Path.of(System.getProperty("user.home"), "synclite");
-        testHome = syncliteRoot.resolve("test");
-        dbDir = testHome.resolve("db");
-        // All test artifacts live under db/testdbreader/
+        testHome = syncliteRoot.resolve("tests");
+        dbDir = testHome.resolve("db").resolve("dbreader");
+        // All test artifacts live under db/dbreader/testdbreader/
         deviceDir = dbDir.resolve(TEST_SUBDIR);
         stageDir = testHome.resolve("stageDir");
         // Source DB lives inside the test subfolder
         srcDbPath = deviceDir.resolve("srcDb").resolve("source.db");
         // Config files live inside the test subfolder
         configPath = deviceDir.resolve("synclite_dbreader.conf");
-        loggerConfigPath = deviceDir.resolve("synclite_logger.conf");
+        loggerConfigPath = deviceDir.resolve("synclite.conf");
         metadataDbPath = deviceDir.resolve("synclite_dbreader_metadata.db");
         driverThread = null;
 
-        // Clean up only this test's artifacts — leave other directories untouched
+        // Clean up only this test's artifacts – leave other directories untouched
         if (Files.exists(deviceDir)) {
             deleteRecursively(deviceDir);
         }
@@ -101,7 +101,7 @@ class DBReaderDriverTest {
         // --- Create synclite-logger configuration ---
         Files.writeString(loggerConfigPath,
                 "local-data-stage-directory = " + stageDir + "\n" +
-                "destination-type = FS\n");
+                "device-stage-type = FS\n");
 
         // --- Create source SQLite database with initial row ---
         // Table includes columns for all supported data type categories:
@@ -285,7 +285,7 @@ class DBReaderDriverTest {
                     " 6.28, 1.41421356, 2.5, 67890.12, 55.6789, " +
                     " 0, '2025-02-20', '2025-07-20 14:45:00', '2025-02-01 08:30:00', " +
                     " X'CAFEBABE', 'second clob value', 0, '2025-01-01 00:00:02')");
-            // Update an existing row — change values across multiple type columns
+            // Update an existing row – change values across multiple type columns
             stmt.execute("UPDATE test_dbreader SET " +
                     "col_text = 'updated text', col_int = 999, col_real = 9.99, " +
                     "col_boolean = 0, col_blob = X'0102030405', " +
@@ -390,7 +390,7 @@ class DBReaderDriverTest {
         // Soft-delete condition fires a DELETE per batch
         assertTrue(deleteCount >= 2,
                 "Should have at least 2 DELETE statements (soft-delete per batch), found: " + deleteCount);
-        // Updates are replayed as INSERTs — no UPDATE statements should appear
+        // Updates are replayed as INSERTs – no UPDATE statements should appear
         assertEquals(0, updateCount,
                 "UPDATEs should be replayed as INSERTs (no UPDATE in command log)");
         // ALTER TABLE ADD COLUMN for col_new
@@ -426,7 +426,7 @@ class DBReaderDriverTest {
 
     /**
      * Starts DBReaderDriver in continuous scheduler mode on a daemon thread.
-     * Uses the public {@code run()} API — no reflection needed for the read
+     * Uses the public {@code run()} API – no reflection needed for the read
      * path.  The scheduler reads objects at the configured interval (2 s).
      * Call {@link #waitForCheckpoint} to block until a specific round of
      * changes has been picked up.

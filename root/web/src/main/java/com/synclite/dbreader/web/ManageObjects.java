@@ -219,10 +219,8 @@ public class ManageObjects extends HttpServlet {
 				response.sendRedirect("manageObjects.jsp");
 			}
 		} catch (Exception e) {
-			//System.out.println("exception : " + e);
-			String errorMsg = e.getMessage();
+			String errorMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
 			request.getRequestDispatcher("manageObjects.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
-			throw new ServletException(e);
 		}
 	}
 	
