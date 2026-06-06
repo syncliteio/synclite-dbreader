@@ -99,7 +99,11 @@ if (session.getAttribute("synclite-device-dir") != null) {
 if (request.getParameter("synclite-logger-configuration-file") != null) {
 	properties.put("synclite-logger-configuration-file", request.getParameter("synclite-logger-configuration-file"));
 } else {
-	Path defaultLoggerConfPath = Path.of(properties.get("synclite-device-dir").toString(), "synclite_logger.conf");
+	Path defaultLoggerConfPath = Path.of(properties.get("synclite-device-dir").toString(), "synclite.conf");
+	if (!Files.exists(defaultLoggerConfPath)) {
+		Path legacy = Path.of(properties.get("synclite-device-dir").toString(), "synclite_logger.conf");
+		if (Files.exists(legacy)) { defaultLoggerConfPath = legacy; }
+	}
 	properties.put("synclite-logger-configuration-file", defaultLoggerConfPath);	
 }
 
@@ -631,9 +635,9 @@ if (request.getParameter("synclite-logger-configuration") != null) {
 	confBuilder.append(
 	"#local-command-stage-directory=<path/to/local/command/stage/directory  #specify if device command handler is enabled>");
 	confBuilder.append(newLine);
-	confBuilder.append("destination-type=FS");
+	confBuilder.append("device-stage-type=FS");
 	confBuilder.append(newLine);
-	confBuilder.append("#destination-type=<FS|MS_ONEDRIVE|GOOGLE_DRIVE|SFTP|MINIO|KAFKA|S3>");
+	confBuilder.append("#device-stage-type=<FS|MS_ONEDRIVE|GOOGLE_DRIVE|SFTP|MINIO|KAFKA|S3>");
 	confBuilder.append(newLine);
 	confBuilder.append(newLine);
 	confBuilder.append("#==============SFTP Configuration=================");
@@ -1664,7 +1668,7 @@ case "SQLITE":
 
 					<tr>
 						<td>SyncLite Logger Configuration</td>
-						<td><textarea name="synclite-logger-configuration" id="synclite-logger-configuration" rows="25" cols="100" title="Specify SyncLite logger configuration. Specified device configurations are written into a .conf file and supplied to initialization of each database/device. Please note the defaults specified for local-stage-directory and destination-type."><%=properties.get("synclite-logger-configuration")%></textarea>
+						<td><textarea name="synclite-logger-configuration" id="synclite-logger-configuration" rows="25" cols="100" title="Specify SyncLite logger configuration. Specified device configurations are written into a .conf file and supplied to initialization of each database/device. Please note the defaults specified for local-stage-directory and device-stage-type."><%=properties.get("synclite-logger-configuration")%></textarea>
 						</td>
 					</tr>
 				</table>

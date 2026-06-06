@@ -165,11 +165,9 @@ public class ValidateDeviceDirectory extends HttpServlet {
 
 			response.sendRedirect("configureDBReader.jsp");
 		} catch (Exception e) {
-			//System.out.println("exception : " + e);
 			this.globalTracer.error("Exception while processing request:", e);
-			String errorMsg = e.getMessage();
+			String errorMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
 			request.getRequestDispatcher("selectDeviceDirectory.jsp?errorMsg=" + URLEncoder.encode(errorMsg, StandardCharsets.UTF_8.name())).forward(request, response);
-			throw new ServletException(e);
 		}
 	}
 
