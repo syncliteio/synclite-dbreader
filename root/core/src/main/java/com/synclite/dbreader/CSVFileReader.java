@@ -35,7 +35,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 
-import io.synclite.logger.*;
+import io.synclite.*;
 
 public class CSVFileReader extends DBReader {
 
