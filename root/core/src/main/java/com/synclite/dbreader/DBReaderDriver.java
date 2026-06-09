@@ -47,7 +47,7 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
 import org.json.JSONTokener;
 
-import io.synclite.logger.*;
+import io.synclite.*;
 
 
 /*import org.apache.log4j.FileAppender;
@@ -781,7 +781,7 @@ public class DBReaderDriver implements Runnable{
 	private void createSystemDeviceSendShutdown() throws SyncLiteException {
 		try {
 			Path deviceFilePath = ConfLoader.getInstance().getSyncLiteDeviceDir().resolve("synclite_dbreader_system.db");
-			Class.forName("io.synclite.logger.DBLogger");
+			Class.forName("io.synclite.DBLogger");
 			DBLogger.initialize(deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), "system");
 			String deviceURL = "jdbc:synclite_dblogger:" + deviceFilePath;
 			try (Connection conn = DriverManager.getConnection(deviceURL)) {

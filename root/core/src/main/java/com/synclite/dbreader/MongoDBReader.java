@@ -51,7 +51,7 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
 
-import io.synclite.logger.*;
+import io.synclite.*;
 
 public class MongoDBReader extends DBReader {
 	

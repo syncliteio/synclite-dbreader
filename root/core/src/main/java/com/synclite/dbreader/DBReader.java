@@ -35,7 +35,7 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.bson.Document;
 
-import io.synclite.logger.*;
+import io.synclite.*;
 
 public class DBReader {
 

@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONTokener;
 
-import io.synclite.logger.*;
+import io.synclite.*;
 
 public class DBObject {
 	private static final int MAX_SYNCLITE_DEVICE_NAME_LENGTH = 64;
@@ -310,7 +310,7 @@ public class DBObject {
 	public final void configureSyncLiteDevice() throws SyncLiteException {
 		try {
 			this.deviceFilePath = ConfLoader.getInstance().getSyncLiteDeviceDir().resolve(this.deviceName + ".db");
-			Class.forName("io.synclite.logger.DBLogger");
+			Class.forName("io.synclite.DBLogger");
 			DBLogger.initialize(this.deviceFilePath, ConfLoader.getInstance().getSyncLiteLoggerConfigurationFile(), this.deviceName);
 			String deviceURL = "jdbc:synclite_dblogger:" + this.deviceFilePath;
 			try (Connection conn = DriverManager.getConnection(deviceURL)) {

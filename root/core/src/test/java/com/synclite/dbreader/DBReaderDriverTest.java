@@ -73,7 +73,7 @@ class DBReaderDriverTest {
     @BeforeEach
     void setUp() throws Exception {
         syncliteRoot = Path.of(System.getProperty("user.home"), "synclite");
-        testHome = syncliteRoot.resolve("tests");
+        testHome = syncliteRoot.resolve("test").resolve("dbreader");
         dbDir = testHome.resolve("db").resolve("dbreader");
         // All test artifacts live under db/dbreader/testdbreader/
         deviceDir = dbDir.resolve(TEST_SUBDIR);
@@ -244,7 +244,7 @@ class DBReaderDriverTest {
             driverThread.join(10_000);
         }
         try {
-            io.synclite.logger.DBLogger.closeAllDevices();
+            io.synclite.DBLogger.closeAllDevices();
         } catch (Exception ignored) {
         }
         // Release the app lock so the lock file can be deleted on next setUp
@@ -320,7 +320,7 @@ class DBReaderDriverTest {
         if (driverThread != null) {
             driverThread.join(10_000);
         }
-        io.synclite.logger.DBLogger.closeAllDevices();
+        io.synclite.DBLogger.closeAllDevices();
 
         // --- Validate: device archive exists in stageDir ---
         assertTrue(Files.exists(stageDir), "Stage directory should exist");
