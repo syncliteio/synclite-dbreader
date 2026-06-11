@@ -449,6 +449,7 @@ public class DBReaderDriver implements Runnable{
 			long incrementalObjectCount = 0;
 			this.globalTracer.info("Loading tables/views from metadata");
 			this.dbReaderMetadataFile = ConfLoader.getInstance().getSyncLiteDeviceDir().resolve("synclite_dbreader_metadata.db");
+			MetadataManager.ensureMetadataTable(this.dbReaderMetadataFile);
 			String url = "jdbc:sqlite:" + dbReaderMetadataFile;
 			Class.forName("org.sqlite.JDBC");
 			try (Connection conn = DriverManager.getConnection(url)) {
