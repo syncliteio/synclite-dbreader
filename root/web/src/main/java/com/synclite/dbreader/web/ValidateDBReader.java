@@ -84,6 +84,14 @@ import com.mongodb.client.MongoDatabase;
 @WebServlet("/validateDBReader")
 public class ValidateDBReader extends HttpServlet {
 
+	/** Bump when on-disk layout/semantics of {@code synclite_dbreader_metadata.db} change
+	 *  in a non-back-compatible way. Stored in the {@code metadata} table under
+	 *  {@link #SYNCLITE_METADATA_VERSION_KEY} so a future dbreader version can detect an
+	 *  older store and run a migration routine. Kept in sync with
+	 *  {@code com.synclite.dbreader.MetadataManager}. */
+	private static final long SYNCLITE_METADATA_VERSION = 1L;
+	private static final String SYNCLITE_METADATA_VERSION_KEY = "synclite_metadata_version";
+
 	private class ObjectInfo {
 		public String objectName;
 		public String objectType;
@@ -1824,6 +1832,24 @@ public class ValidateDBReader extends HttpServlet {
 			//
 			try (Statement stmt = conn.createStatement()) {
 				stmt.execute("CREATE TABLE IF NOT EXISTS src_object_reload_configurations(object_name TEXT PRIMARY KEY, reload_schema_on_next_restart INT, reload_schema_on_each_restart INT, reload_object_on_next_restart INT, reload_object_on_each_restart INT)");
+			}
+
+			// Key/value `metadata` table seeded with the on-disk version so a future
+			// dbreader release can detect an older store and run a migration.
+			try (Statement stmt = conn.createStatement()) {
+				stmt.execute("CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY, value TEXT)");
+			}
+			try (PreparedStatement sel = conn.prepareStatement("SELECT 1 FROM metadata WHERE key = ?")) {
+				sel.setString(1, SYNCLITE_METADATA_VERSION_KEY);
+				try (ResultSet rs = sel.executeQuery()) {
+					if (!rs.next()) {
+						try (PreparedStatement ins = conn.prepareStatement("INSERT INTO metadata(key, value) VALUES(?, ?)")) {
+							ins.setString(1, SYNCLITE_METADATA_VERSION_KEY);
+							ins.setString(2, Long.toString(SYNCLITE_METADATA_VERSION));
+							ins.executeUpdate();
+						}
+					}
+				}
 			}
 		} catch(SQLException e) {
 			this.globalTracer.error("Failed to create dbreader metadata table : " + e.getMessage(), e);
