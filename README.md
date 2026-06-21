@@ -44,7 +44,7 @@ Source DB(s)  ──▶  SyncLite DBReader  ──▶  Staging Storage  ──�
 
 ```bash
 cd synclite-dbreader/root
-mvn -Drevision=oss clean install
+mvn -Drevision=1.0.0 clean install
 ```
 
 Built WAR: `root/web/target/synclite-dbreader-oss.war`
