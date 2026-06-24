@@ -534,16 +534,13 @@ public class DBObject {
 	
 					incrCondBuilder.append(quoteColumnName(colName));
 					incrCondBuilder.append(" > ");
-					String expr1 = "";
-					String expr2 = "";
+					String expr1 = "'$" + idx + "'";
+					String expr2 = "'$" + String.valueOf(idx + 1) + "'";
 					if (this.incrementalKeyTypes.get(colName.toUpperCase()) == IncrementalKeyType.TIMESTAMP) {
 						String srcQueryTimestampConversionFunction = ConfLoader.getInstance().getSrcQueryTimestampConversionFunction();
 						if ((srcQueryTimestampConversionFunction != null) && (!srcQueryTimestampConversionFunction.isBlank())) {
 							expr1 = srcQueryTimestampConversionFunction.replace("$", "$" + String.valueOf(idx));
 							expr2 = srcQueryTimestampConversionFunction.replace("$", "$" + String.valueOf(idx + 1));
-						} else {
-							expr1 = "'$" + idx + "'";
-							expr2 = "'$" + String.valueOf(idx + 1) + "'";
 						}
 					}
 					incrCondBuilder.append(expr1);
@@ -575,13 +572,11 @@ public class DBObject {
 	
 					incrCondBuilder.append(quoteColumnName(colName));
 					incrCondBuilder.append(" > ");
-					String expr1 = "";
+					String expr1 = "'$" + idx + "'";
 					if (this.incrementalKeyTypes.get(colName.toUpperCase()) == IncrementalKeyType.TIMESTAMP) {
 						String srcQueryTimestampConversionFunction = ConfLoader.getInstance().getSrcQueryTimestampConversionFunction();
 						if ((srcQueryTimestampConversionFunction != null) && (!srcQueryTimestampConversionFunction.isBlank())) {
 							expr1 = srcQueryTimestampConversionFunction.replace("$", "$" + String.valueOf(idx));
-						} else {
-							expr1 = "'$" + idx + "'";
 						}
 					}
 					incrCondBuilder.append(expr1);
