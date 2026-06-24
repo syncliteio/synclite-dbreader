@@ -251,7 +251,7 @@ public class DBReader {
 							String colName = entry.getKey();
 							String oldColDef = oldColDefMap.get(colName);
 							if (oldColDef != null) {
-								if (! areColDefsSame(entry.getValue(), oldColDef)) {
+								if (! areColumnDefinitionsEquivalent(entry.getValue(), oldColDef)) {
 									String alterDDL = "ALTER TABLE " + srcObject.getName() + " ALTER COLUMN " + DBObject.quoteColumnName(colName) + " " + newColDefMap.get(colName);
 									alterDDLs.add(alterDDL);
 								}
@@ -271,7 +271,7 @@ public class DBReader {
 						// matching column definitions => treat as RENAME COLUMN so destination
 						// preserves existing data instead of dropping it and adding an empty column.
 						if (addedColNames.size() == 1 && droppedColNames.size() == 1
-								&& areColDefsSame(newColDefMap.get(addedColNames.get(0)), oldColDefMap.get(droppedColNames.get(0)))) {
+								&& areColumnDefinitionsEquivalent(newColDefMap.get(addedColNames.get(0)), oldColDefMap.get(droppedColNames.get(0)))) {
 							String oldName = droppedColNames.get(0);
 							String newName = addedColNames.get(0);
 							String renameDDL = "ALTER TABLE " + srcObject.getName() + " RENAME COLUMN " + DBObject.quoteColumnName(oldName) + " TO " + DBObject.quoteColumnName(newName);
@@ -999,13 +999,24 @@ public class DBReader {
 		}
 	}
 
-	private final boolean areColDefsSame(String newColDef, String oldColDef) {
-		newColDef = newColDef.replaceAll("\\s+", "").toUpperCase();
-		oldColDef = oldColDef.replaceAll("\\s+", "").toUpperCase();
-		if (newColDef.equals(oldColDef)) {
-			return true;
+	static boolean areColumnDefinitionsEquivalent(String newColDef, String oldColDef) {
+		if (newColDef == null || oldColDef == null) {
+			return newColDef == oldColDef;
 		}
-		return false;
+		return normalizeColumnDefinition(newColDef).equals(normalizeColumnDefinition(oldColDef));
+	}
+
+	private static String normalizeColumnDefinition(String colDef) {
+		String normalized = colDef.replaceAll("\\s+", " ").trim().replaceAll("\"", "").toUpperCase();
+		normalized = normalized.replace("CHARACTER VARYING", "VARCHAR");
+		normalized = normalized.replace("CHARACTER", "CHAR");
+		normalized = normalized.replaceAll("\\bINT4\\b", "INTEGER");
+		normalized = normalized.replaceAll("\\bINT\\b", "INTEGER");
+		normalized = normalized.replaceAll("\\bBOOL\\b", "BOOLEAN");
+		normalized = normalized.replaceAll("\\bTIMESTAMP WITHOUT TIME ZONE\\b", "TIMESTAMP");
+		normalized = normalized.replaceAll("\\bTIMESTAMP WITH TIME ZONE\\b", "TIMESTAMP");
+		normalized = normalized.replaceAll("\\s+", "");
+		return normalized;
 	}
 
 
