@@ -114,9 +114,17 @@ public class DBReader {
 				}
 
 				if (newObjectInfo != null) {
+					String refreshedUniqueKeyColumns = newObjectInfo.uniqueKeyColumnsStr;
+					if ((refreshedUniqueKeyColumns == null || refreshedUniqueKeyColumns.isBlank())
+							&& srcObject.getUniqueKeyColumnsStr() != null
+							&& !srcObject.getUniqueKeyColumnsStr().isBlank()) {
+						refreshedUniqueKeyColumns = srcObject.getUniqueKeyColumnsStr();
+						this.tracer.info("Preserving configured unique key columns during schema refresh for object : "
+								+ this.srcObject.getFullName() + ", unique keys : " + refreshedUniqueKeyColumns);
+					}
 					try {
 						//Refresh table object with latest schema definition.
-						srcObject.initializeDBObject(newObjectInfo.name, newObjectInfo.columnDefStr, newObjectInfo.uniqueKeyColumnsStr, srcObject.getIncrementalKeyColumnStr(), srcObject.getDeviceName(), srcObject.getPosition(), srcObject.getMaskColumnsStr(), srcObject.getDeleteCondition(), srcObject.getPartitionIdx(), srcObject.getSelectCoditionsJson(), srcObject.getSelectCoditions());
+						srcObject.initializeDBObject(newObjectInfo.name, newObjectInfo.columnDefStr, refreshedUniqueKeyColumns, srcObject.getIncrementalKeyColumnStr(), srcObject.getDeviceName(), srcObject.getPosition(), srcObject.getMaskColumnsStr(), srcObject.getDeleteCondition(), srcObject.getPartitionIdx(), srcObject.getSelectCoditionsJson(), srcObject.getSelectCoditions());
 					} catch(Exception e) {
 						this.tracer.error("Failed to initialize object : " + e.getMessage(), e);
 						throw new SyncLiteException("Failed to initialize object : " + e.getMessage(), e);
@@ -308,8 +316,16 @@ public class DBReader {
 								}
 							}
 							try {
+								String refreshedUniqueKeyColumns = newObjectInfo.uniqueKeyColumnsStr;
+								if ((refreshedUniqueKeyColumns == null || refreshedUniqueKeyColumns.isBlank())
+										&& srcObject.getUniqueKeyColumnsStr() != null
+										&& !srcObject.getUniqueKeyColumnsStr().isBlank()) {
+									refreshedUniqueKeyColumns = srcObject.getUniqueKeyColumnsStr();
+									this.tracer.info("Preserving configured unique key columns during schema refresh for object : "
+											+ this.srcObject.getFullName() + ", unique keys : " + refreshedUniqueKeyColumns);
+								}
 								//Refresh table object with latest schema definition.
-								srcObject.initializeDBObject(newObjectInfo.name, newObjectInfo.columnDefStr, newObjectInfo.uniqueKeyColumnsStr, srcObject.getIncrementalKeyColumnStr(), srcObject.getDeviceName(), srcObject.getPosition(), srcObject.getMaskColumnsStr(), srcObject.getDeleteCondition(), srcObject.getPartitionIdx(), srcObject.getSelectCoditionsJson(), srcObject.getSelectCoditions());
+								srcObject.initializeDBObject(newObjectInfo.name, newObjectInfo.columnDefStr, refreshedUniqueKeyColumns, srcObject.getIncrementalKeyColumnStr(), srcObject.getDeviceName(), srcObject.getPosition(), srcObject.getMaskColumnsStr(), srcObject.getDeleteCondition(), srcObject.getPartitionIdx(), srcObject.getSelectCoditionsJson(), srcObject.getSelectCoditions());
 
 								//
 								//WE NEED TO PUBLISH REFRESH TABLE ALSO SINCE COLUMNS MAY HAVE GOT REORDRED NOW.
