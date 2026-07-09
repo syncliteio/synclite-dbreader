@@ -1019,11 +1019,55 @@ public class DBReader {
 		if (newColDef == null || oldColDef == null) {
 			return newColDef == oldColDef;
 		}
-		return normalizeColumnDefinition(newColDef).equals(normalizeColumnDefinition(oldColDef));
+		// Parse both definitions into (type, isNotNull) tuples for explicit comparison
+		ColumnDefinitionTuple newTuple = parseColumnDefinition(newColDef);
+		ColumnDefinitionTuple oldTuple = parseColumnDefinition(oldColDef);
+		
+		// Compare base types (normalized)
+		if (!newTuple.baseType.equals(oldTuple.baseType)) {
+			return false;
+		}
+		
+		// Explicitly compare NOT NULL constraint (critical for rename detection on non-null columns)
+		if (newTuple.isNotNull != oldTuple.isNotNull) {
+			return false;
+		}
+		
+		return true;
 	}
 
-	private static String normalizeColumnDefinition(String colDef) {
-		String normalized = colDef.replaceAll("\\s+", " ").trim().replaceAll("\"", "").toUpperCase();
+	/**
+	 * Parses a column definition into (baseType, isNotNull) tuple.
+	 * Examples: "VARCHAR NOT NULL" -> (VARCHAR, true), "TEXT" -> (TEXT, false), "INTEGER NULL" -> (INTEGER, false)
+	 */
+	private static ColumnDefinitionTuple parseColumnDefinition(String colDef) {
+		if (colDef == null || colDef.isEmpty()) {
+			return new ColumnDefinitionTuple("", false);
+		}
+		
+		String upperDef = colDef.replaceAll("\\s+", " ").trim().toUpperCase();
+		
+		// Check for explicit NULL or NOT NULL constraint
+		boolean isNotNull = false;
+		if (upperDef.endsWith("NOT NULL")) {
+			isNotNull = true;
+			upperDef = upperDef.substring(0, upperDef.length() - 8).trim();
+		} else if (upperDef.endsWith("NULL")) {
+			isNotNull = false;
+			upperDef = upperDef.substring(0, upperDef.length() - 4).trim();
+		}
+		
+		// Normalize the base type
+		String baseType = normalizeColumnType(upperDef);
+		
+		return new ColumnDefinitionTuple(baseType, isNotNull);
+	}
+
+	/**
+	 * Normalizes a column type definition (without NULL/NOT NULL constraint)
+	 */
+	private static String normalizeColumnType(String type) {
+		String normalized = type.replaceAll("\\s+", " ").trim().replaceAll("\"", "").toUpperCase();
 		normalized = normalized.replace("CHARACTER VARYING", "VARCHAR");
 		normalized = normalized.replace("CHARACTER", "CHAR");
 		normalized = normalized.replaceAll("\\bINT4\\b", "INTEGER");
@@ -1033,6 +1077,20 @@ public class DBReader {
 		normalized = normalized.replaceAll("\\bTIMESTAMP WITH TIME ZONE\\b", "TIMESTAMP");
 		normalized = normalized.replaceAll("\\s+", "");
 		return normalized;
+	}
+	
+	/**
+	 * Helper class to represent parsed column definition (type, isNotNull)
+	 * Mirrors Consolidator's approach of checking these properties separately
+	 */
+	private static class ColumnDefinitionTuple {
+		final String baseType;
+		final boolean isNotNull;
+		
+		ColumnDefinitionTuple(String baseType, boolean isNotNull) {
+			this.baseType = baseType;
+			this.isNotNull = isNotNull;
+		}
 	}
 
 
