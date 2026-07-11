@@ -47,7 +47,7 @@ cd synclite-dbreader/root
 mvn -Drevision=1.0.0 clean install
 ```
 
-Built WAR: `root/web/target/synclite-dbreader-oss.war`
+Built WAR: `root/web/target/synclite-dbreader-1.0.0.war`
 
 ## Related Components
 
