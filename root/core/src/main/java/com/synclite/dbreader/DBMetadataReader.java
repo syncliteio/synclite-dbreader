@@ -132,8 +132,11 @@ public class DBMetadataReader {
 
 							StringBuilder columnTypeBuilder = new StringBuilder();
 							String columnTypeName = columns.getString("TYPE_NAME");
-							int columnSize = columns.getInt("COLUMN_SIZE");
-							int decimalDigits = columns.getInt("DECIMAL_DIGITS");
+							//COLUMN_SIZE / DECIMAL_DIGITS must be read as long: MySQL reports
+							//4294967295 (2^32-1) for types such as INT UNSIGNED, LONGTEXT and
+							//LONGBLOB, which overflows java.lang.Integer and makes getInt throw.
+							long columnSize = columns.getLong("COLUMN_SIZE");
+							long decimalDigits = columns.getLong("DECIMAL_DIGITS");
 
 							String isNullable = getIsNullableClause(columns.getString("IS_NULLABLE")); // NULL or NOT NULL
 							columnTypeBuilder.append(columnTypeName.toUpperCase());

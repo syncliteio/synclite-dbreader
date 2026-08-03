@@ -548,8 +548,11 @@ class DBReaderDriverTest {
             while (cols.next()) {
                 String colName = cols.getString("COLUMN_NAME");
                 String typeName = cols.getString("TYPE_NAME").toUpperCase();
-                int colSize = cols.getInt("COLUMN_SIZE");
-                int decDigits = cols.getInt("DECIMAL_DIGITS");
+                //COLUMN_SIZE / DECIMAL_DIGITS must be read as long: MySQL reports
+                //4294967295 (2^32-1) for types such as INT UNSIGNED, LONGTEXT and
+                //LONGBLOB, which overflows java.lang.Integer and makes getInt throw.
+                long colSize = cols.getLong("COLUMN_SIZE");
+                long decDigits = cols.getLong("DECIMAL_DIGITS");
                 String isNullable = cols.getString("IS_NULLABLE");
 
                 StringBuilder typeBuilder = new StringBuilder(typeName);
