@@ -483,7 +483,7 @@ public class ConfLoader {
 				this.srcType  = SrcType.valueOf(propValue);
 				
 				if (this.edition == SyncLiteEdition.DEVELOPER) {
-					if ((this.srcType == SrcType.POSTGRESQL) || (this.srcType == SrcType.SQLITE) || (this.srcType == SrcType.DUCKDB) || (this.srcType == SrcType.MONGODB)) {
+					if (isSourceSupportedInDeveloperEdition(this.srcType)) {
 						//Allowed in Developer Edition
 					} else {
 						throw new SyncLitePropsException("Feature Not Supported : Source " + this.srcType + " is not supported in developer edition.");
@@ -1114,6 +1114,14 @@ public class ConfLoader {
 		} else {
 			throw new SyncLitePropsException("allowed-source-app-types not specified in license file");
 		}
+	}
+
+	static boolean isSourceSupportedInDeveloperEdition(SrcType source) {
+		return (source == SrcType.POSTGRESQL)
+				|| (source == SrcType.SQLITE)
+				|| (source == SrcType.DUCKDB)
+				|| (source == SrcType.MONGODB)
+				|| (source == SrcType.MYSQL);
 	}
 
 	private void validateAndProcessArgProperties() throws SyncLitePropsException {
