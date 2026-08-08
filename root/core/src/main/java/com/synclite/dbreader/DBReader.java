@@ -583,7 +583,7 @@ public class DBReader {
 										// Handle null BLOB values
 										devicePreparedStmt.setNull(i, Types.BLOB);
 									}
-								} else if ((metaData.getColumnType(i) == Types.BOOLEAN) || (metaData.getColumnType(i) == Types.BIT)) {
+								} else if (isBooleanColumn(metaData, i)) {
 									//Boolean's getString returns different values for different databases.
 									//Hence using the specific method for boolean.
 									if (srcRS.getString(i) == null) {
@@ -698,6 +698,28 @@ public class DBReader {
 			this.tracer.error("Failed to read data from source for object : " + srcObject.getName() + " : " + e.getMessage(), e);
 			throw new SyncLiteException("Failed to read data from source for object : " + srcObject.getName() + " : " + e.getMessage(), e);
 		}
+	}
+
+	/**
+	 * PostgreSQL reports BIT and BIT VARYING columns as JDBC {@link Types#BIT},
+	 * but their values are bit strings (for example, {@code 10101010}), not
+	 * booleans. Only route actual boolean columns, or BIT types whose driver
+	 * does not identify them as bit strings, through {@code getBoolean()}.
+	 */
+	private boolean isBooleanColumn(ResultSetMetaData metaData, int columnIndex) throws SQLException {
+		if (metaData.getColumnType(columnIndex) == Types.BOOLEAN) {
+			return true;
+		}
+		if (metaData.getColumnType(columnIndex) != Types.BIT) {
+			return false;
+		}
+		String typeName = metaData.getColumnTypeName(columnIndex);
+		if (typeName == null) {
+			return true;
+		}
+		String normalized = typeName.trim().toLowerCase(java.util.Locale.ROOT);
+		return !normalized.equals("bit") && !normalized.equals("varbit")
+				&& !normalized.equals("bit varying");
 	}
 
 	protected Double convertTimestampToMills(String val) {
