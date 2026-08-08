@@ -1503,10 +1503,10 @@ public class ValidateDBReader extends HttpServlet {
 
 				// Get data type and character maximum length
 				String columnTypeName = columnsInfo.getString("DATA_TYPE");
-				int characterMaxLength = columnsInfo.getInt("CHARACTER_MAXIMUM_LENGTH");
+				long characterMaxLength = columnsInfo.getLong("CHARACTER_MAXIMUM_LENGTH");
 				String isNullable = getIsNullableClause(columnsInfo.getString("IS_NULLABLE"));
-				int dataPrecision = columnsInfo.getInt("NUMERIC_PRECISION");
-				int dataScale = columnsInfo.getInt("NUMERIC_SCALE");
+				long dataPrecision = columnsInfo.getLong("NUMERIC_PRECISION");
+				long dataScale = columnsInfo.getLong("NUMERIC_SCALE");
 				String udtName = columnsInfo.getString("UDT_NAME");
 
 				//Handle Array data type
@@ -1610,10 +1610,10 @@ public class ValidateDBReader extends HttpServlet {
 
 				// Get data type and character maximum length
 				String columnTypeName = columnsInfo.getString("DATA_TYPE");
-				int characterMaxLength = columnsInfo.getInt("CHARACTER_MAXIMUM_LENGTH");
+				long characterMaxLength = columnsInfo.getLong("CHARACTER_MAXIMUM_LENGTH");
 				String isNullable = getIsNullableClause(columnsInfo.getString("IS_NULLABLE"));
-				int dataPrecision = columnsInfo.getInt("NUMERIC_PRECISION");
-				int dataScale = columnsInfo.getInt("NUMERIC_SCALE");
+				long dataPrecision = columnsInfo.getLong("NUMERIC_PRECISION");
+				long dataScale = columnsInfo.getLong("NUMERIC_SCALE");
 
 				// Append column name, data type, and maximum character length for applicable types
 				StringBuilder columnBuilder = new StringBuilder();
