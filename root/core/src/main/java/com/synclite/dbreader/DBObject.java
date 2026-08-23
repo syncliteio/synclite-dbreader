@@ -617,6 +617,9 @@ public class DBObject {
 
 		if (ConfLoader.getInstance().getSrcDBReaderObjectRecordLimit() > 0) {
 			switch(ConfLoader.getInstance().getSrcType()) {
+			case MSSQL:
+				selectTableSql = selectTableSql.replaceFirst("SELECT ", "SELECT TOP " + ConfLoader.getInstance().getSrcDBReaderObjectRecordLimit() + " ");
+				break;
 			case MYSQL:
 			case POSTGRESQL:
 			case SQLITE:

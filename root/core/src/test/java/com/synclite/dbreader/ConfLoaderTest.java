@@ -12,4 +12,11 @@ class ConfLoaderTest {
                 ConfLoader.isSourceSupportedInDeveloperEdition(SrcType.MYSQL),
                 "MySQL source must be available in the Developer edition");
     }
+
+    @Test
+    void developerEditionAllowsMicrosoftSqlServerSource() {
+        assertTrue(
+                ConfLoader.isSourceSupportedInDeveloperEdition(SrcType.MSSQL),
+                "Microsoft SQL Server source must be available in the Developer edition");
+    }
 }
