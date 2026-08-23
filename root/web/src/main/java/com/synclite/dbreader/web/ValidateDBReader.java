@@ -426,6 +426,12 @@ public class ValidateDBReader extends HttpServlet {
 				validateConnection(srcConnectionString, srcUser, srcPassword);
 				break;
 
+			case MSSQL:
+				srcTypeName = "Microsoft SQL Server";
+				Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+				validateConnection(srcConnectionString, srcUser, srcPassword);
+				break;
+
 			case POSTGRESQL:	
 				srcTypeName = "PostgreSQL";
 				Class.forName("org.postgresql.Driver");
@@ -1979,6 +1985,8 @@ public class ValidateDBReader extends HttpServlet {
 			return false;
 		case MYSQL:
 			return false;
+		case MSSQL:
+			return true;
 		case POSTGRESQL:
 			return true;
 		case SQLITE:
@@ -1995,6 +2003,8 @@ public class ValidateDBReader extends HttpServlet {
 		case CSV:
 			return false;
 		case MYSQL:
+			return true;
+		case MSSQL:
 			return true;
 		case POSTGRESQL:
 			return true;

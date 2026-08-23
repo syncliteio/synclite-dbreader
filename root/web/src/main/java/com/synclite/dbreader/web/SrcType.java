@@ -21,6 +21,7 @@ public enum SrcType {
 	DUCKDB,
 	MONGODB,
 	MYSQL,
+	MSSQL,
 	POSTGRESQL,
 	SQLITE,
 }

@@ -306,6 +306,10 @@ if (request.getParameter("src-connection-string") != null) {
 		String defaultConnStrMySQL = "jdbc:mysql://127.0.0.1:3306/sourceschema?user=synclite&password=synclite";
 		properties.put("src-connection-string", defaultConnStrMySQL);
 		break;
+	case "MSSQL":
+		String defaultConnStrSQLServer = "jdbc:sqlserver://127.0.0.1:1433;encrypt=true;trustServerCertificate=true;user=synclite;password=synclite;databaseName=sourcedb";
+		properties.put("src-connection-string", defaultConnStrSQLServer);
+		break;
 	case "POSTGRESQL":
 		String defaultConnStrPG = "jdbc:postgresql://127.0.0.1:5432/sourcedb?user=synclite&password=synclite";
 		properties.put("src-connection-string", defaultConnStrPG);
@@ -844,6 +848,11 @@ case "SQLITE":
 									out.println("<option value=\"MYSQL\" selected>MySQL</option>");
 								} else {
 									out.println("<option value=\"MYSQL\">MySQL</option>");
+								}
+								if (properties.get("src-type").equals("MSSQL")) {
+									out.println("<option value=\"MSSQL\" selected>Microsoft SQL Server</option>");
+								} else {
+									out.println("<option value=\"MSSQL\">Microsoft SQL Server</option>");
 								}
 								if (properties.get("src-type").equals("POSTGRESQL")) {
 									out.println("<option value=\"POSTGRESQL\" selected>PostgreSQL</option>");

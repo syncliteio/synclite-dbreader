@@ -160,6 +160,13 @@
 		    <version>8.2.0</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
+		<dependency>
+		    <groupId>com.microsoft.sqlserver</groupId>
+		    <artifactId>mssql-jdbc</artifactId>
+		    <version>13.4.0.jre11</version>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.duckdb/duckdb_jdbc -->
 		<dependency>
 			<groupId>org.duckdb</groupId>

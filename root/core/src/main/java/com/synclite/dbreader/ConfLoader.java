@@ -1121,7 +1121,8 @@ public class ConfLoader {
 				|| (source == SrcType.SQLITE)
 				|| (source == SrcType.DUCKDB)
 				|| (source == SrcType.MONGODB)
-				|| (source == SrcType.MYSQL);
+				|| (source == SrcType.MYSQL)
+				|| (source == SrcType.MSSQL);
 	}
 
 	private void validateAndProcessArgProperties() throws SyncLitePropsException {
@@ -1146,6 +1147,8 @@ public class ConfLoader {
 			return "DuckDB";
 		case MYSQL:
 			return "MySQL";
+		case MSSQL:
+			return "Microsoft SQL Server";
 		case POSTGRESQL:
 			return "PostgreSQL";
 		case SQLITE:
@@ -1161,6 +1164,8 @@ public class ConfLoader {
 			return true;
 		case MYSQL:
 			return false;
+		case MSSQL:
+			return true;
 		case POSTGRESQL:
 			return true;
 		case SQLITE:
@@ -1175,6 +1180,8 @@ public class ConfLoader {
 		case DUCKDB:
 			return true;
 		case MYSQL:
+			return true;
+		case MSSQL:
 			return true;
 		case POSTGRESQL:
 			return true;
@@ -1211,6 +1218,8 @@ public class ConfLoader {
 			return "DuckDB";
 		case MYSQL:
 			return "MySQL";
+		case MSSQL:
+			return "Microsoft SQL Server";
 		case POSTGRESQL:
 			return "PostgreSQL";
 		case SQLITE:
