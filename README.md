@@ -44,10 +44,10 @@ Source DB(s)  ──▶  SyncLite DBReader  ──▶  Staging Storage  ──�
 
 ```bash
 cd synclite-dbreader/root
-mvn -Drevision=1.1.0 clean install
+mvn -Drevision=1.2.0 clean install
 ```
 
-Built WAR: `root/web/target/synclite-dbreader-1.1.0.war`
+Built WAR: `root/web/target/synclite-dbreader-1.2.0.war`
 
 ## Related Components
 

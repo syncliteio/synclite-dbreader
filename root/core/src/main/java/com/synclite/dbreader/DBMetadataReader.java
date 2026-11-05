@@ -36,17 +36,11 @@ import java.util.Vector;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.util.AwsHostNameUtils;
+import io.synclite.S3ClientFactory;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -876,37 +870,27 @@ public class DBMetadataReader {
 			String accessKey = ConfLoader.getInstance().getSrcFileStorageS3AccessKey();
 			String secretKey = ConfLoader.getInstance().getSrcFileStorageS3SecretKey();
 
-			AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-
-			AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-					.withCredentials(new AWSStaticCredentialsProvider(credentials))
-					.withEndpointConfiguration(new EndpointConfiguration(url, AwsHostNameUtils.parseRegion(url, null)))
-					.build();
-
-
+			try (S3Client s3Client = S3ClientFactory.create(url, accessKey, secretKey)) {
 			Path localDirPath = ConfLoader.getInstance().getSrcFileStorageLocalFSDirectory();
 
-			ListObjectsV2Result result = s3Client.listObjectsV2(bucketName);				
-			for (S3ObjectSummary ob : result.getObjectSummaries()) {
-				String key = ob.getKey(); 
-				String[] keyParts = key.split("/");
+			for (S3Object ob : s3Client.listObjectsV2Paginator(request -> request.bucket(bucketName)).contents()) {
+				String key = ob.key();
 				String objName = "";
 				if (key.endsWith("/")) {
-					objName = keyParts[keyParts.length - 2];
+					objName = Path.of(key).getFileName().toString();
 					Path localObjPath = localDirPath.resolve(objName);
 					Files.createDirectories(localObjPath);
 
 					//Now check if at least one file exists under the path then download it as well
-					ListObjectsV2Result fileResults = s3Client.listObjectsV2(bucketName + "/" + key);		             
-					for (S3ObjectSummary fileOb : fileResults.getObjectSummaries()) {
-						String fileName = key.split("/")[keyParts.length - 1];
+					for (S3Object fileOb : s3Client.listObjectsV2Paginator(request -> request.bucket(bucketName).prefix(key)).contents()) {
+						if (fileOb.key().endsWith("/")) continue;
+						String fileName = Path.of(fileOb.key()).getFileName().toString();
 
-						String remoteFilePath = bucketName + "/" + objName + "/" + fileName;
+						String remoteFilePath = fileOb.key();
 						String localFilePath = localDirPath.resolve(objName).resolve(fileName).toString();
 
 						// Download the file
-						S3Object s3Object = s3Client.getObject(bucketName, remoteFilePath.toString());	            
-						try (S3ObjectInputStream inputStream = s3Object.getObjectContent()) {
+						try (ResponseInputStream<GetObjectResponse> inputStream = s3Client.getObject(request -> request.bucket(bucketName).key(remoteFilePath))) {
 							try (FileOutputStream outputStream = new FileOutputStream(Path.of(localFilePath).toFile())) {
 								int read = 0;
 								byte[] bytes = new byte[2048];
@@ -920,7 +904,7 @@ public class DBMetadataReader {
 					}		        
 				}   
 			}
-			s3Client.shutdown();
+			}
 		} catch (Exception e) {
 			throw new SyncLiteException("Failed to list objects from the specified S3 location : " + e.getMessage(), e);
 		}
