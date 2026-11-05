@@ -6,7 +6,7 @@
 	<artifactId>synclite-dbreader</artifactId>
 	<version>${revision}</version>
 	<properties>
-		<revision>1.1.0</revision>
+		<revision>1.2.0</revision>
 	</properties>
 	<packaging>war</packaging>
 	<parent>
@@ -94,7 +94,7 @@
 		<dependency>
 			<groupId>org.xerial</groupId>
 			<artifactId>sqlite-jdbc</artifactId>
-			<version>3.53.0.0</version>
+			<version>3.54.1.0</version>
 		</dependency>
 
 		<dependency>
@@ -156,18 +156,17 @@
             <version>1.10.0</version>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3 -->
 		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-s3</artifactId>
-			<version>1.12.797</version>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.57.8</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/com.github.mwiede/jsch -->
 		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.2.21</version>
+			<version>2.28.8</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->

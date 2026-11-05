@@ -28,18 +28,12 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.util.AwsHostNameUtils;
+import io.synclite.S3ClientFactory;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class S3FileStorage extends FileStorage {
 	
@@ -52,19 +46,15 @@ public class S3FileStorage extends FileStorage {
     }
 
 	private Path localBaseDirectory;
-	private AmazonS3 s3Client;
+	private S3Client s3Client;
 	private String bucketName;
 	protected S3FileStorage() {
 		try {
-	        AWSCredentials credentials = new BasicAWSCredentials(ConfLoader.getInstance().getSrcFileStorageS3AccessKey(), ConfLoader.getInstance().getSrcFileStorageS3SecretKey());
-
-			s3Client = AmazonS3ClientBuilder.standard()
-                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                    .withEndpointConfiguration(new EndpointConfiguration(ConfLoader.getInstance().getSrcFileStorageS3Url(), AwsHostNameUtils.parseRegion(ConfLoader.getInstance().getSrcFileStorageS3Url(), null)))
-                    .build();
+			s3Client = S3ClientFactory.create(ConfLoader.getInstance().getSrcFileStorageS3Url(),
+					ConfLoader.getInstance().getSrcFileStorageS3AccessKey(), ConfLoader.getInstance().getSrcFileStorageS3SecretKey());
 			this.bucketName = ConfLoader.getInstance().getSrcFileStorageS3BucketName();
 			//Validate if we are connected
-			s3Client.doesBucketExistV2(this.bucketName);
+			s3Client.headBucket(request -> request.bucket(this.bucketName));
 
 			this.localBaseDirectory = ConfLoader.getInstance().getSrcFileStorageLocalFSDirectory();
 		} catch (Exception e) {
@@ -76,10 +66,9 @@ public class S3FileStorage extends FileStorage {
 	@Override
 	public void listFilesOrderByCreationTime(String objName, Instant thresholdTS, List<Path> fileList, HashMap<Path, Instant> creationTimes, Logger tracer) throws IOException {
 		try {
-			ListObjectsV2Result result = s3Client.listObjectsV2(bucketName + "/" + objName);				
-			for (S3ObjectSummary ob : result.getObjectSummaries()) {
-				Path remoteFilePath = Path.of(ob.getKey());
-				Instant createTime = ob.getLastModified().toInstant();
+			for (S3Object ob : s3Client.listObjectsV2Paginator(request -> request.bucket(bucketName).prefix(objName + "/")).contents()) {
+				Path remoteFilePath = Path.of(ob.key());
+				Instant createTime = ob.lastModified();
 				if (thresholdTS != null) {
 					if (createTime.isAfter(thresholdTS)) {
 						fileList.add(remoteFilePath);
@@ -93,7 +82,7 @@ public class S3FileStorage extends FileStorage {
 			
 	        Collections.sort(fileList, Comparator.comparing(creationTimes::get));
 
-		} catch (AmazonClientException e) {
+		} catch (SdkException e) {
 			String errorMsg = "Exception while listing files for object : " + objName + " : " + e.getMessage();
 			tracer.error("Exception while listing files for object : " + objName + " : " + e.getMessage(), e);				
 			throw new IOException(errorMsg, e);
@@ -109,8 +98,7 @@ public class S3FileStorage extends FileStorage {
 			}
 
 			Files.createFile(outputFilePath);
-			S3Object s3Object = s3Client.getObject(bucketName, remotePath.toString());	            
-			try (S3ObjectInputStream inputStream = s3Object.getObjectContent()) {
+			try (ResponseInputStream<GetObjectResponse> inputStream = s3Client.getObject(request -> request.bucket(bucketName).key(remotePath.toString()))) {
 				try (FileOutputStream outputStream = new FileOutputStream(outputFilePath.toFile())) {
 					int read = 0;
 					byte[] bytes = new byte[2048];
@@ -119,8 +107,6 @@ public class S3FileStorage extends FileStorage {
 					}
 					outputStream.flush();
 				}
-			} finally {
-				s3Object.close();
 			}
 			return outputFilePath;
 		} catch(Exception e) {
